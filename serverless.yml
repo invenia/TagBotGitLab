@@ -1,0 +1,23 @@
+service: TagBotGitLab
+
+provider:
+  name: aws
+  runtime: go1.x
+  environment:
+    GITLAB_API_BASE: ${env:GITLAB_API_BASE}
+    GITLAB_API_TOKEN: ${env:GITLAB_API_TOKEN}
+    GITLAB_WEBHOOK_TOKEN: ${env:GITLAB_WEBHOOK_TOKEN}
+    REGISTRY_BRANCH: ${env:REGISTRY_BRANCH}
+package:
+ exclude:
+   - ./**
+ include:
+   - ./bin/**
+functions:
+  gitlab:
+    handler: bin/gitlab
+    timeout: 30
+    events:
+      - http:
+          path: /webhook/gitlab
+          method: post
