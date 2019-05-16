@@ -16,10 +16,9 @@ import (
 )
 
 var (
-	APIBase        = os.Getenv("GITLAB_API_BASE")
-	APIToken       = os.Getenv("GITLAB_API_TOKEN")
-	WebhookToken   = os.Getenv("GITLAB_WEBHOOK_TOKEN")
-	RegistryBranch = os.Getenv("REGISTRY_BRANCH")
+	APIBase      = os.Getenv("GITLAB_API_BASE")
+	APIToken     = os.Getenv("GITLAB_API_TOKEN")
+	WebhookToken = os.Getenv("GITLAB_WEBHOOK_TOKEN")
 
 	// TODO: This does not  work with nested groups.
 	RepoRegex    = regexp.MustCompile(`Repository:.*/(.*/.*)`)
@@ -46,6 +45,9 @@ type MergeEvent struct {
 		Action       string `json:"action"`
 		Description  string `json:"description"`
 		TargetBranch string `json:"target_branch"`
+		Target       struct {
+			DefaultBranch string `json:"default_branch"`
+		}
 	} `json:"object_attributes"`
 	Changes struct {
 		State struct {
@@ -128,7 +130,7 @@ func (me MergeEvent) Handle() error {
 		return fmt.Errorf("MR state is not merged (%s)", current)
 	}
 
-	if target := me.ObjectAttributes.TargetBranch; target != RegistryBranch {
+	if target := me.ObjectAttributes.TargetBranch; target != me.ObjectAttributes.Target.DefaultBranch {
 		return fmt.Errorf("Invalid target branch (%s)", target)
 	}
 
