@@ -1,5 +1,4 @@
 service: TagBotGitLab
-
 provider:
   name: aws
   runtime: go1.x
@@ -7,7 +6,6 @@ provider:
     GITLAB_API_BASE: ${env:GITLAB_API_BASE}
     GITLAB_API_TOKEN: ${env:GITLAB_API_TOKEN}
     GITLAB_WEBHOOK_TOKEN: ${env:GITLAB_WEBHOOK_TOKEN}
-    REGISTRY_BRANCH: ${env:REGISTRY_BRANCH}
 package:
  exclude:
    - ./**
