@@ -3,9 +3,11 @@ provider:
   name: aws
   runtime: go1.x
   environment:
+    AUTOMATIC_MERGE: ${env:AUTOMATIC_MERGE}
     GITLAB_API_BASE: ${env:GITLAB_API_BASE}
     GITLAB_API_TOKEN: ${env:GITLAB_API_TOKEN}
     GITLAB_WEBHOOK_TOKEN: ${env:GITLAB_WEBHOOK_TOKEN}
+    REGISTRATOR_ID: ${env:REGISTRATOR_ID}
 package:
  exclude:
    - ./**

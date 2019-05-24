@@ -14,6 +14,8 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
   - `GITLAB_API_TOKEN`: A GitLab API access token.
     It should have write access to all repositories that you want to create tags on.
   - `GITLAB_WEBHOOK_TOKEN`: A secure secret that you have generated.
+  - `REGISTRATOR_ID`: The ID of the user making Registrator merge requests.
+  - `AUTOMATIC_MERGE`: Set to `true` to enable automatic merge of merge requests.
 - Run `serverless deploy --stage prod` to deploy the API.
 - Create a webhook on your registry repository.
   The URL should be the one that appeared after the last step.
