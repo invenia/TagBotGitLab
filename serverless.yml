@@ -12,12 +12,12 @@ package:
  exclude:
    - ./**
  include:
-   - ./bin/**
+   - ./bin/gitlab
 functions:
   gitlab:
     handler: bin/gitlab
     timeout: 30
     events:
       - http:
-          path: /webhook/gitlab
+          path: /gitlab
           method: post
