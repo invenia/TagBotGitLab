@@ -37,8 +37,8 @@ type Request struct {
 // Reponse is what we return from the handler.
 type Response events.APIGatewayProxyResponse
 
-// MergeEvent contains the merge request event data.
-type MergeEvent struct {
+// MergeRequestEvent contains the merge request event data.
+type MergeRequestEvent struct {
 	EventType string `json:"event_type"`
 	Attrs     struct {
 		Action       string `json:"action"`
@@ -79,7 +79,7 @@ func main() {
 			return
 		}
 
-		me := MergeEvent{}
+		me := MergeRequestEvent{}
 		if err := json.Unmarshal([]byte(req.Body), &me); err != nil {
 			resp.Body = "Parsing body: " + err.Error()
 			return
@@ -103,7 +103,7 @@ func main() {
 }
 
 // Handle handles the event.
-func (me MergeEvent) Handle() error {
+func (me MergeRequestEvent) Handle() error {
 	if strconv.Itoa(me.Attrs.Author) != Registrator {
 		return errors.New("MR not created by Registrator")
 	}
@@ -118,7 +118,7 @@ func (me MergeEvent) Handle() error {
 }
 
 // HandleOpen handles open events.
-func (me MergeEvent) HandleOpen() error {
+func (me MergeRequestEvent) HandleOpen() error {
 	if !AutomaticMerge {
 		return errors.New("Automatic merging is disabled")
 	} else if me.Changes.ID.Previous != nil {
@@ -141,7 +141,7 @@ func (me MergeEvent) HandleOpen() error {
 }
 
 // HandleMerge handles merge events.
-func (me MergeEvent) HandleMerge() error {
+func (me MergeRequestEvent) HandleMerge() error {
 	if me.Changes.State.Previous == "merged" {
 		return errors.New("MR state was previously merged")
 	} else if current := me.Changes.State.Current; current != "merged" {
