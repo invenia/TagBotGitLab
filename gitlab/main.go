@@ -79,8 +79,8 @@ func main() {
 			return
 		}
 
-		me := &MergeEvent{}
-		if err := json.Unmarshal([]byte(req.Body), me); err != nil {
+		me := MergeEvent{}
+		if err := json.Unmarshal([]byte(req.Body), &me); err != nil {
 			resp.Body = "Parsing body: " + err.Error()
 			return
 		}
@@ -127,10 +127,13 @@ func (me MergeEvent) HandleOpen() error {
 
 	project := me.Attrs.Project
 	mr := me.Changes.ID.Current
-	opts := &gitlab.AcceptMergeRequestOptions{
-		MergeWhenPipelineSucceeds: gitlab.Bool(true),
+
+	if _, _, err := Client.MergeRequestApprovals.ApproveMergeRequest(project, mr, nil); err != nil {
+		return fmt.Errorf("Approve merge request: %v", err)
 	}
-	if _, _, err := Client.MergeRequests.AcceptMergeRequest(project, mr, opts); err != nil {
+
+	opts := gitlab.AcceptMergeRequestOptions{MergeWhenPipelineSucceeds: gitlab.Bool(true)}
+	if _, _, err := Client.MergeRequests.AcceptMergeRequest(project, mr, &opts); err != nil {
 		return fmt.Errorf("Accept merge request: %v", err)
 	}
 
@@ -171,12 +174,11 @@ func (me MergeEvent) HandleMerge() error {
 	commit := match[1]
 
 	fmt.Printf("Creating tag %s for %s at %s\n", version, project, commit)
-
-	opts := &gitlab.CreateTagOptions{
+	opts := gitlab.CreateTagOptions{
 		TagName: gitlab.String(version),
 		Ref:     gitlab.String(commit),
 	}
-	if _, _, err := Client.Tags.CreateTag(project, opts); err != nil {
+	if _, _, err := Client.Tags.CreateTag(project, &opts); err != nil {
 		return fmt.Errorf("Create tag: %v", err)
 	}
 
