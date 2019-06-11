@@ -7,8 +7,6 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
 ## Deployment
 
 - Install the [Serverless Framework](https://serverless.com).
-- Install the [Go compiler](https://golang.org/dl).
-- Build the API by running `build.sh`.
 - Set the following environment variables:
   - `GITLAB_API_BASE`: The base URL of your GitLab instance's API.
   - `GITLAB_API_TOKEN`: A GitLab API access token.
