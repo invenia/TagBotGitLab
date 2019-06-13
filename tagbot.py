@@ -1,8 +1,9 @@
-import gitlab
 import json
 import os
 import re
 import traceback
+
+import gitlab
 
 re_repo = re.compile("Repository:.*/(.*/.*)")
 re_version = re.compile("Version:\\s*(v.*)")
