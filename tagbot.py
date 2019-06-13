@@ -85,7 +85,7 @@ def parse_body(body):
     """Parse the MR body."""
     m = re_repo.search(body)
     if not m:
-        None, None, None, "No repo match"
+        return None, None, None, "No repo match"
     repo = m[1].strip()
     m = re_version.search(body)
     if not m:
