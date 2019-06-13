@@ -1,12 +1,15 @@
 service: TagBotGitLab
 plugins:
   - serverless-python-requirements
+package:
+  exclude:
+    - ./venv/**
 provider:
   name: aws
   runtime: python3.7
   environment:
     AUTOMATIC_MERGE: ${env:AUTOMATIC_MERGE}
-    GITLAB_API_BASE: ${env:GITLAB_API_BASE}
+    GITLAB_URL: ${env:GITLAB_URL}
     GITLAB_API_TOKEN: ${env:GITLAB_API_TOKEN}
     GITLAB_WEBHOOK_TOKEN: ${env:GITLAB_WEBHOOK_TOKEN}
     REGISTRATOR_ID: ${env:REGISTRATOR_ID}

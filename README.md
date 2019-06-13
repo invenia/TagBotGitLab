@@ -8,7 +8,7 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
 
 - Install the [Serverless Framework](https://serverless.com).
 - Set the following environment variables:
-  - `GITLAB_API_BASE`: The base URL of your GitLab instance's API.
+  - `GITLAB_URL`: The base URL of your GitLab instance (not its API).
   - `GITLAB_API_TOKEN`: A GitLab API access token.
     It should have write access to all repositories that you want to create tags on.
   - `GITLAB_WEBHOOK_TOKEN`: A secure secret that you have generated.
