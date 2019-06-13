@@ -14,7 +14,7 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
   - `GITLAB_WEBHOOK_TOKEN`: A secure secret that you have generated.
   - `REGISTRATOR_ID`: The ID of the user making Registrator merge requests.
   - `AUTOMATIC_MERGE`: Set to `true` to enable automatic merge of merge requests.
-    Enabling this feature requires the user to have Maintainer privileges on the registry.
+    Enabling this feature requires the user to have Maintainer privileges on the registry, and for the "Prevent approval of merge requests by merge request author" repository setting to be disabled.
 - Run `serverless deploy --stage prod` to deploy the API.
 - Create a webhook on your registry repository.
   The URL should be the one that appeared after the last step.
@@ -23,4 +23,4 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
 
 ---
 
-This code is tested on GitLab version `11.10.4-ee`.
+This code is tested on GitLab version `11.11.0-ee`.
