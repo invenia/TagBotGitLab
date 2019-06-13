@@ -3,6 +3,8 @@ plugins:
   - serverless-python-requirements
 package:
   exclude:
+    - ./__pycache__/**
+    - ./test_tagbot.py
     - ./venv/**
 provider:
   name: aws
@@ -15,7 +17,7 @@ provider:
     REGISTRATOR_ID: ${env:REGISTRATOR_ID}
 functions:
   gitlab:
-    handler: handler.main
+    handler: tagbot.handler
     events:
       - http:
           path: gitlab

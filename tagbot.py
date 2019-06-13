@@ -5,8 +5,8 @@ import re
 import traceback
 
 re_repo = re.compile("Repository:.*/(.*/.*)")
-re_version = re.compile("Version:\s*(v.*)")
-re_commit = re.compile("Commit:\s*(.*)")
+re_version = re.compile("Version:\\s*(v.*)")
+re_commit = re.compile("Commit:\\s*(.*)")
 
 merge = os.getenv("AUTOMATIC_MERGE", "").lower() == "true"
 registrator = int(os.environ["REGISTRATOR_ID"])
@@ -16,7 +16,7 @@ client = gitlab.Gitlab(
 )
 
 
-def main(evt, _ctx):
+def handler(evt, _ctx):
     """Lambda entrypoint."""
     try:
         if get_in(evt, "headers", "X-Gitlab-Token") != token:
@@ -72,27 +72,35 @@ def handle_merge(payload):
         return "Target branch is not the default"
     body = get_in(payload, "object_attributes", "description")
     print(f"MR body:\n{body}")
-    m = re_repo.search(body)
-    if not m:
-        return "No repo match"
-    repo = m[1].strip()
-    m = re_version.search(body)
-    if not m:
-        return "No version match"
-    version = m[1].strip()
-    m = re_commit.search(body)
-    if not m:
-        return "No commit match"
-    commit = m[1].strip()
+    repo, version, commit, err = parse_body(body)
+    if err:
+        return err
     p = client.projects.get(repo, lazy=True)
     print(f"Creating tag {version} for {repo} at {commit}")
     p.tags.create({"tag_name": version, "ref": commit})
 
 
+def parse_body(body):
+    """Parse the MR body."""
+    m = re_repo.search(body)
+    if not m:
+        None, None, None, "No repo match"
+    repo = m[1].strip()
+    m = re_version.search(body)
+    if not m:
+        return None, None, None, "No version match"
+    version = m[1].strip()
+    m = re_commit.search(body)
+    if not m:
+        return None, None, None, "No commit match"
+    commit = m[1].strip()
+    return repo, version, commit, None
+
+
 def get_in(d, *keys, default=None):
     """Get a nested value from a dict."""
     for k in keys:
-        if k not in d:
+        if not isinstance(d, dict) or k not in d:
             return default
         d = d[k]
     return d
