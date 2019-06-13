@@ -1,3 +1,9 @@
+# Set some environment variables required for import.
+from os import environ as env
+
+env["REGISTRATOR_ID"] = "0"
+env["GITLAB_URL"] = env["GITLAB_API_TOKEN"] = env["GITLAB_WEBHOOK_TOKEN"] = ""
+
 import pytest
 import tagbot
 
