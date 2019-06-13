@@ -7,6 +7,7 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
 ## Deployment
 
 - Install the [Serverless Framework](https://serverless.com).
+- Run `npm install`.
 - Set the following environment variables:
   - `GITLAB_URL`: The base URL of your GitLab instance (not its API).
   - `GITLAB_API_TOKEN`: A GitLab API access token.
