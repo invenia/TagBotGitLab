@@ -1,23 +1,24 @@
 service: TagBotGitLab
+plugins:
+  - serverless-python-requirements
+package:
+  exclude:
+    - ./**
+  include:
+    - ./tagbot.py
 provider:
   name: aws
-  runtime: go1.x
+  runtime: python3.7
   environment:
     AUTOMATIC_MERGE: ${env:AUTOMATIC_MERGE}
-    GITLAB_API_BASE: ${env:GITLAB_API_BASE}
+    GITLAB_URL: ${env:GITLAB_URL}
     GITLAB_API_TOKEN: ${env:GITLAB_API_TOKEN}
     GITLAB_WEBHOOK_TOKEN: ${env:GITLAB_WEBHOOK_TOKEN}
     REGISTRATOR_ID: ${env:REGISTRATOR_ID}
-package:
- exclude:
-   - ./**
- include:
-   - ./bin/gitlab
 functions:
   gitlab:
-    handler: bin/gitlab
-    timeout: 30
+    handler: tagbot.handler
     events:
       - http:
-          path: /gitlab
+          path: gitlab
           method: post
