@@ -3,9 +3,9 @@ plugins:
   - serverless-python-requirements
 package:
   exclude:
-    - ./__pycache__/**
-    - ./test_tagbot.py
-    - ./venv/**
+    - ./**
+  include:
+    - ./tagbot.py
 provider:
   name: aws
   runtime: python3.7
