@@ -71,7 +71,7 @@ def handle_merge(payload):
     default = get_in(payload, "object_attributes", "target", "default_branch")
     if target != default:
         return "Target branch is not the default"
-    body = get_in(payload, "object_attributes", "description")
+    body = get_in(payload, "object_attributes", "description", default="")
     print(f"MR body:\n{body}")
     repo, version, commit, err = parse_body(body)
     if err:
