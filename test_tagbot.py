@@ -54,6 +54,8 @@ def test_handler(handle_event):
     d = {"headers": {"X-Gitlab-Token": "abc"}}
     assert tagbot.handler(d, None)["statusCode"] == 200
     handle_event.called_once_with(d)
+    handle_event.side_effect = RuntimeError()
+    assert tagbot.handler(d, None) == {"statusCode": 500, "body": "Runtime error"}
 
 
 @patch("tagbot.handle_merge")
