@@ -58,7 +58,7 @@ def handle_open(payload):
     mr = p.mergerequests.get(mr_id, lazy=True)
     print("Approving and merging MR")
     mr.approve()
-    mr.merge(merge_when_pipeline_succeeds=True)
+    mr.merge(merge_when_pipeline_succeeds=True, should_remove_source_branch=True)
 
 
 def handle_merge(payload):

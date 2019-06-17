@@ -138,4 +138,6 @@ def test_handle_open():
     assert tagbot.handle_open({"object_attributes": {"source_project_id": 1}}) is None
     tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
     mr.approve.assert_called_once_with()
-    mr.merge.assert_called_once_with(merge_when_pipeline_succeeds=True)
+    mr.merge.assert_called_once_with(
+        merge_when_pipeline_succeeds=True, should_remove_source_branch=True
+    )
