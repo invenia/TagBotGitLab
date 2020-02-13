@@ -21,29 +21,34 @@ def handler(evt, _ctx):
     """Lambda entrypoint."""
     try:
         if get_in(evt, "headers", "X-Gitlab-Token") != token:
-            status, err = 403, "Invalid token"
+            status, msg = 403, "Invalid token"
         else:
-            status, err = 200, handle_event(json.loads(evt.get("body", "{}")))
+            status, msg = 200, handle_event(json.loads(evt.get("body", "{}")))
     except:
         traceback.print_exc()
-        status, err = 500, "Runtime error"
-    print(f"Status: {status}\nError: {err}")
-    return {"statusCode": status, "body": err or "No error"}
+        status, msg = 500, "Runtime error"
+    level = "Info" if status == 200 else "Error"
+    print(f"Status: {status}\n{level}: {msg}")
+    return {"statusCode": status, "body": msg or "No error"}
 
 
 def handle_event(payload):
     """Handle a GitLab event."""
+    # MR event payload format :
+    # https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#merge-request-events
     print("Payload:", json.dumps(payload, indent=2))
-    if get_in(payload, "object_attributes", "author_id") != registrator:
-        return "MR not created by Registrator"
-    if payload.get("event_type") != "merge_request":
-        return "Skipping event"
+    author_id = get_in(payload, "object_attributes", "author_id")
+    if author_id != registrator:
+        return f"MR not created by Registrator, MR created by author_id: {author_id}"
+    object_kind = payload.get("object_kind")
+    if object_kind != "merge_request":
+        return f"Not an MR event, Skipping event: {object_kind}"
     a = get_in(payload, "object_attributes", "action")
     if a == "open":
         return handle_open(payload)
     if a == "merge":
         return handle_merge(payload)
-    return "Unknown or missing action"
+    return f"Skipping event, irrelevent or missing action: {a}"
 
 
 def handle_open(payload):
@@ -59,14 +64,19 @@ def handle_open(payload):
     print("Approving and merging MR")
     mr.approve()
     mr.merge(merge_when_pipeline_succeeds=True, should_remove_source_branch=True)
+    return "Approved and merged."
 
 
 def handle_merge(payload):
     """Handle a merge request merge event."""
-    if get_in(payload, "changes", "state", "previous") == "merged":
-        return "MR was previously merged"
-    if get_in(payload, "changes", "state", "current") != "merged":
-        return "MR is not merged"
+    # just check the action again for completeness
+    action = get_in(payload, "object_attributes", "action")
+    if action != "merge":
+        return f"Skipping event, not a merge action. action: {action}"
+    state = get_in(payload, "object_attributes", "state")
+    if state != "merged":
+        # We expect all 'merge' actions to have a'merged' state
+        raise Exception(f"Unexpected state for a 'merge' action. State: {state}")
     target = get_in(payload, "object_attributes", "target_branch")
     default = get_in(payload, "object_attributes", "target", "default_branch")
     if target != default:
@@ -75,7 +85,7 @@ def handle_merge(payload):
     print(f"MR body:\n{body}")
     repo, version, commit, err = parse_body(body)
     if err:
-        return err
+        raise Exceotion(err)
     p = client.projects.get(repo, lazy=True)
     print(f"Creating tag {version} for {repo} at {commit}")
     p.tags.create({"tag_name": version, "ref": commit})
