@@ -27,8 +27,8 @@ def handler(evt, _ctx):
     except:
         traceback.print_exc()
         status, msg = 500, "Runtime error"
-    level = "Info" if status == 200 else "Error"
-    print(f"Status: {status}\n{level}: {msg}")
+    level = "INFO" if status == 200 else "ERROR"
+    print(f"STATUS : {status}\n{level} : {msg}")
     return {"statusCode": status, "body": msg or "No error"}
 
 
@@ -75,8 +75,7 @@ def handle_merge(payload):
         return f"Skipping event, not a merge action. action: {action}"
     state = get_in(payload, "object_attributes", "state")
     if state != "merged":
-        # We expect all 'merge' actions to have a'merged' state
-        raise Exception(f"Unexpected state for a 'merge' action. State: {state}")
+        return f"Skipping event, not a merged state. state: {state}"
     target = get_in(payload, "object_attributes", "target_branch")
     default = get_in(payload, "object_attributes", "target", "default_branch")
     if target != default:
@@ -85,10 +84,11 @@ def handle_merge(payload):
     print(f"MR body:\n{body}")
     repo, version, commit, err = parse_body(body)
     if err:
-        raise Exceotion(err)
+        raise Exception("Parsing MR description failed. " + err)
     p = client.projects.get(repo, lazy=True)
     print(f"Creating tag {version} for {repo} at {commit}")
     p.tags.create({"tag_name": version, "ref": commit})
+    return f"Created tag {version} for {repo} at {commit}"
 
 
 def parse_body(body):

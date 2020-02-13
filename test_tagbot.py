@@ -61,26 +61,48 @@ def test_handler(handle_event):
 @patch("tagbot.handle_merge")
 @patch("tagbot.handle_open")
 def test_handle_event(handle_open, handle_merge):
-    assert tagbot.handle_event({}) == "MR not created by Registrator"
-    assert (
-        tagbot.handle_event({"object_attributes": {"author_id": 0}}) == "Skipping event"
-    )
-    assert (
-        tagbot.handle_event(
-            {"event_type": "merge_request", "object_attributes": {"author_id": 0}}
-        )
-        == "Unknown or missing action"
-    )
-    d = {
-        "event_type": "merge_request",
+    # empty payload
+    payload = {}
+    assert tagbot.handle_event(payload) == \
+        "MR not created by Registrator, MR created by author_id: None"
+
+    # an event that's not triggered by the registrar
+    payload = {"object_attributes": {"author_id": 1}}
+    assert tagbot.handle_event(payload) == \
+        "MR not created by Registrator, MR created by author_id: 1"
+
+    # registrar triggered but not a merge request
+    payload = {
+        "object_attributes": {"author_id": 0},
+        "object_kind": "push"
+    }
+    assert tagbot.handle_event(payload) == \
+        "Not an MR event, Skipping event: push"
+
+    # registrar merge_request but irrelevent action
+    payload = {
+        "object_attributes": {"author_id": 0, "action": "approve"},
+        "object_kind": "merge_request"
+    }
+    assert tagbot.handle_event(payload) == \
+        "Skipping event, irrelevent or missing action: approve"
+
+    # registrar merge_request with open action
+    payload = {
+        "object_kind": "merge_request",
         "object_attributes": {"author_id": 0, "action": "open"},
     }
-    tagbot.handle_event(d)
-    handle_open.called_once_with(d)
+    tagbot.handle_event(payload)
+    handle_open.called_once_with(payload)
     handle_merge.assert_not_called()
-    d["object_attributes"]["action"] = "merge"
-    tagbot.handle_event(d)
-    handle_merge.assert_called_once_with(d)
+
+    # registrar merge_request with merge action
+    payload = {
+        "object_kind": "merge_request",
+        "object_attributes": {"author_id": 0, "action": "merge"},
+    }
+    tagbot.handle_event(payload)
+    handle_merge.assert_called_once_with(payload)
     handle_open.assert_called_once()  # From before.
 
 
@@ -89,38 +111,57 @@ def test_handle_merge():
     p.tags = Mock(spec=gitlab.v4.objects.ProjectTagManager)
     tagbot.client.projects.get = Mock(return_value=p)
 
-    assert (
-        tagbot.handle_merge({"changes": {"state": {"previous": "merged"}}})
-        == "MR was previously merged"
-    )
-    assert (
-        tagbot.handle_merge({"changes": {"state": {"current": "open"}}})
-        == "MR is not merged"
-    )
-    assert (
-        tagbot.handle_merge(
-            {
-                "changes": {"state": {"current": "merged"}},
-                "object_attributes": {
-                    "target_branch": "foo",
-                    "target": {"default_branch": "master"},
-                },
-            }
-        )
-        == "Target branch is not the default"
-    )
-    assert (
-        tagbot.handle_merge({"changes": {"state": {"current": "merged"}}}) is not None
-    )
-    assert (
-        tagbot.handle_merge(
-            {
-                "changes": {"state": {"current": "merged"}},
-                "object_attributes": {"description": good_body},
-            }
-        )
-        is None
-    )
+    # not a merge action
+    payload = {"object_attributes": {"action": "open"}}
+    assert tagbot.handle_merge(payload) == \
+        "Skipping event, not a merge action. action: open"
+
+    # merge action but not a merged state
+    payload = {"object_attributes": {"action": "merge", "state": "conflict"}}
+    assert tagbot.handle_merge(payload) == \
+        "Skipping event, not a merged state. state: conflict"
+
+    # merge action and merged state, but not to the default branch
+    payload = {
+        "object_attributes": {
+            "action": "merge",
+            "state": "merged",
+            "target_branch": "develop",
+            "target": {"default_branch": "master"}
+        }
+    }
+    assert tagbot.handle_merge(payload) == \
+        "Target branch is not the default"
+
+    # merge action, merged state, default branch, but invalid MR description.
+    payload = {
+        "object_attributes": {
+            "action": "merge",
+            "state": "merged",
+            "target_branch": "master",
+            "target": {"default_branch": "master"},
+            "description": "invalid description",
+        }
+    }
+    try:
+        parse_fail = False
+        tagbot.handle_merge(payload)
+    except:
+        parse_fail = True
+    assert (parse_fail)
+
+    # all valid
+    payload = {
+        "object_attributes": {
+            "action": "merge",
+            "state": "merged",
+            "target_branch": "master",
+            "target": {"default_branch": "master"},
+            "description": good_body,
+        }
+    }
+    assert tagbot.handle_merge(payload) == \
+        "Created tag v0.1.2 for foo/bar at abcdef"
     tagbot.client.projects.get.assert_called_once_with("foo/bar", lazy=True)
     p.tags.create.assert_called_once_with({"tag_name": "v0.1.2", "ref": "abcdef"})
 
@@ -131,11 +172,18 @@ def test_handle_open():
     p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
     p.mergerequests.get = Mock(return_value=mr)
     tagbot.client.projects.get = Mock(return_value=p)
+
+    # when auto merging is disabled
     tagbot.merge = False
     assert tagbot.handle_open({}) == "Automatic merging is disabled"
+
+    # when mr is not a newly opened mr
     tagbot.merge = True
     assert tagbot.handle_open({"changes": {"iid": {"previous": 1}}}) == "Not a new MR"
-    assert tagbot.handle_open({"object_attributes": {"source_project_id": 1}}) is None
+
+    # all valid, performs merge
+    assert tagbot.handle_open({"object_attributes": {"source_project_id": 1}}) == \
+        "Approved and merged."
     tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
     mr.approve.assert_called_once_with()
     mr.merge.assert_called_once_with(
