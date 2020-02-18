@@ -35,6 +35,26 @@ def test_parse_body():
     assert repo is version is commit is None
     assert err == "No commit match"
 
+    # with protocol in url
+    body = "Repository: https://gitlab.foo.com/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    repo, version, commit, err = tagbot.parse_body(body)
+    assert repo == "goodRepo"
+
+    # w/o protocol and no repo prefix
+    body = "Repository: gitlab.foo.com/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    repo, version, commit, err = tagbot.parse_body(body)
+    assert repo == "goodRepo"
+
+    # single repo prefix
+    body = "Repository: gitlab.foo.com/p1/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    repo, version, commit, err = tagbot.parse_body(body)
+    assert repo == "p1/goodRepo"
+
+    # multiple repo prefixs
+    body = "Repository: gitlab.foo.com/p1/p2/p3/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    repo, version, commit, err = tagbot.parse_body(body)
+    assert repo == "p1/p2/p3/goodRepo"
+
 
 def test_get_in():
     d = {"a": {"b": {"c": "d"}}}
