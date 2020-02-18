@@ -5,7 +5,8 @@ import traceback
 
 import gitlab
 
-re_repo = re.compile("Repository:.*/(.*/.*)")
+# match on group3 to get everything after the host, i.e everything after the single '/'
+re_repo = re.compile("Repository:\\s*(http[s]?://)?([^/\\s]+/)(.*)")
 re_version = re.compile("Version:\\s*(v.*)")
 re_commit = re.compile("Commit:\\s*(.*)")
 
@@ -96,7 +97,7 @@ def parse_body(body):
     m = re_repo.search(body)
     if not m:
         return None, None, None, "No repo match"
-    repo = m[1].strip()
+    repo = m[3].strip()
     m = re_version.search(body)
     if not m:
         return None, None, None, "No version match"
