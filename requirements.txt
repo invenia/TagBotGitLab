@@ -1,1 +1,6 @@
+Jinja2==2.10.3
+python-dateutil
 python-gitlab==1.8.0
+pyyaml
+semver==2.9.0
+

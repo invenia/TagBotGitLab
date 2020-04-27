@@ -1,14 +1,15 @@
-# Set some environment variables required for import.
-from os import environ as env
+import gitlab
+import pytest
 
+from os import environ as env
+from unittest.mock import Mock, patch
+
+# Set some environment variables required for import.
 env["REGISTRATOR_ID"] = "0"
 env["GITLAB_URL"] = env["GITLAB_API_TOKEN"] = env["GITLAB_WEBHOOK_TOKEN"] = "abc"
 
-from unittest.mock import Mock, patch
-
-import gitlab
-import pytest
 import tagbot
+
 
 good_body = """
 Repository: gitlab.foo.com/foo/bar
@@ -128,8 +129,51 @@ def test_handle_event(handle_open, handle_merge):
 
 def test_handle_merge():
     p = Mock(spec=gitlab.v4.objects.Project)
-    p.tags = Mock(spec=gitlab.v4.objects.ProjectTagManager)
     tagbot.client.projects.get = Mock(return_value=p)
+    p.get_id = Mock(return_value="foo/bar")
+
+    p.tags = Mock(spec=gitlab.v4.objects.ProjectTagManager)
+    p.tags.gitlab = Mock(spec=gitlab.Gitlab)
+    p.tags.gitlab.url = "gitlab.foo.com"
+
+    prev_tag = Mock(spec=gitlab.v4.objects.ProjectTag)
+    prev_tag.name = "v0.1.0"
+    prev_tag.attributes = {'commit': {'created_at': '2020-01-01 11:00:00'}}
+    tag = Mock(spec=gitlab.v4.objects.ProjectTag)
+    tag.name = "v0.1.2"
+    tag.attributes = {'commit': {'created_at': '2020-02-01 11:00:00'}}
+    p.tags.list = Mock(return_value=[prev_tag, tag])
+
+    commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
+    commit.created_at = '2020-02-01 11:00:00'
+    p.commits = Mock(spec=gitlab.v4.objects.ProjectCommitManager)
+    p.commits.get = Mock(return_value=commit)
+
+    author = {
+        "name": "John Smith",
+        "web_url": "https://gitlab.foo.com/john.smith",
+        "username": "john.smith",
+    }
+    issue = Mock(spec=gitlab.v4.objects.Issue)
+    issue.closed_at = '2020-01-15 11:00:00'
+    issue.labels = []
+    issue.author = author
+    issue.description = ""
+    issue.title = "Issue"
+    issue.web_url = "https://gitlab.foo.com/foo/bar/~/issues/2"
+    p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
+    p.issues.list = Mock(return_value=[issue])
+
+    merge_request = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request.merged_at = "2020-01-15 11:00:00"
+    merge_request.labels = []
+    merge_request.author = author
+    merge_request.description = ""
+    merge_request.title = "Merge Request"
+    merge_request.web_url = "https://gitlab.foo.com/foo/bar/~/merge_requests/2"
+    merge_request.merged_by = author
+    p.mergerequests = Mock(spec=gitlab.v4.objects.MergeRequestManager)
+    p.mergerequests.list = Mock(return_value=[merge_request])
 
     # not a merge action
     payload = {"object_attributes": {"action": "open"}}

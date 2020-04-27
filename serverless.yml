@@ -6,6 +6,7 @@ package:
     - ./**
   include:
     - ./tagbot.py
+    - ./changelog.py
 provider:
   name: aws
   runtime: python3.7
