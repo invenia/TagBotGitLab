@@ -92,7 +92,7 @@ class Changelog:
         merge_requests.reverse()  # Sort in chronological order.
         return merge_requests
 
-    def _format_user(self, user: Union[Dict, None]) -> Optional[Dict[str, object]]:
+    def _format_user(self, user: Optional[Dict]) -> Optional[Dict[str, object]]:
         """Format a user for the template."""
         if user is None:
             return None
