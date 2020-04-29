@@ -2,7 +2,6 @@ import gitlab
 import os.path
 import re
 import semver
-import yaml
 
 from dateutil import parser
 from datetime import datetime, timedelta, timezone
