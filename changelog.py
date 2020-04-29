@@ -5,7 +5,7 @@ import semver
 
 from dateutil import parser
 from datetime import datetime, timedelta, timezone
-from gitlab.v4.objects import ProjectIssue, ProjectMergeRequest, ProjectTag
+from gitlab.v4.objects import Project, ProjectIssue, ProjectMergeRequest, ProjectTag
 from jinja2 import Template
 from typing import Dict, List, Optional, Union
 from urllib.parse import unquote
@@ -31,7 +31,7 @@ class Changelog:
     """A Changelog produces release notes for a single release."""
     _slug_re = re.compile(r"[\s_-]")
 
-    def __init__(self, repo):
+    def __init__(self, repo: Project):
         self._repo = repo
         self._ignore = set(self._slug(s) for s in DEFAULT_IGNORE)
 
