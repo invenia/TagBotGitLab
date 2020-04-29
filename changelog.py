@@ -6,15 +6,16 @@ import yaml
 
 from dateutil import parser
 from datetime import datetime, timedelta, timezone
+from gitlab.v4.objects import ProjectIssue, ProjectMergeRequest, ProjectTag
 from jinja2 import Template
-from typing import Dict
+from typing import Dict, List, Optional, Union
 from urllib.parse import unquote
 
 
-path = os.path.join(os.path.dirname(__file__), "template.yml")
-with open(path) as f:
-    action = yaml.safe_load(f)
-DEFAULT_TEMPLATE = action["changelog"]["default"]
+path = os.path.join(os.path.dirname(__file__), "template.md")
+with open(path, "r") as f:
+    default_template = f.read()
+TEMPLATE = Template(default_template, trim_blocks=True)
 
 DEFAULT_IGNORE = [
     "changelog skip",
@@ -29,17 +30,17 @@ DEFAULT_IGNORE = [
 
 class Changelog:
     """A Changelog produces release notes for a single release."""
+    _slug_re = re.compile(r"[\s_-]")
 
     def __init__(self, repo):
         self._repo = repo
-        self._template = Template(DEFAULT_TEMPLATE, trim_blocks=True)
         self._ignore = set(self._slug(s) for s in DEFAULT_IGNORE)
 
     def _slug(self, s: str) -> str:
         """Return a version of the string that's easy to compare."""
-        return re.sub(r"[\s_-]", "", s.casefold())
+        return self._slug_re.sub("", s.casefold())
 
-    def _previous_release(self, version: str):
+    def _previous_release(self, version: str) -> Optional[ProjectTag]:
         """Get the release previous to the current one (according to SemVer)."""
         cur_ver = semver.parse_version_info(version[1:])
         prev_ver = semver.parse_version_info("0.0.0")
@@ -61,7 +62,7 @@ class Changelog:
                 prev_ver = ver
         return prev_rel
 
-    def _issues(self, start: datetime, end: datetime):
+    def _issues(self, start: datetime, end: datetime) -> List[ProjectIssue]:
         """Collect issues that were closed in the interval."""
         issues = []
         for x in self._repo.issues.list(state="closed", updated_after=start, all=True):
@@ -78,7 +79,7 @@ class Changelog:
         issues.reverse()  # Sort in chronological order.
         return issues
 
-    def _merge_requests(self, start: datetime, end: datetime):
+    def _merge_requests(self, start: datetime, end: datetime) -> List[ProjectMergeRequest]:
         """Collect merge requests in the interval."""
         merge_requests = []
         for x in self._repo.mergerequests.list(state="merged", updated_after=start, all=True):
@@ -92,7 +93,7 @@ class Changelog:
         merge_requests.reverse()  # Sort in chronological order.
         return merge_requests
 
-    def _format_user(self, user) -> Dict[str, object]:
+    def _format_user(self, user: Union[Dict, None]) -> Optional[Dict[str, object]]:
         """Format a user for the template."""
         if user is None:
             return None
@@ -103,7 +104,7 @@ class Changelog:
             "username": user['username'],
         }
 
-    def _format_issue(self, issue) -> Dict[str, object]:
+    def _format_issue(self, issue: ProjectIssue) -> Dict[str, object]:
         """Format an issue for the template."""
         return {
             "author": self._format_user(issue.author),
@@ -114,7 +115,9 @@ class Changelog:
             "url": issue.web_url,
         }
 
-    def _format_merge_request(self, merge_request) -> Dict[str, object]:
+    def _format_merge_request(
+        self, merge_request: ProjectMergeRequest
+    ) -> Dict[str, object]:
         """Format a pull request for the template."""
         return {
             "author": self._format_user(merge_request.author),
@@ -160,7 +163,7 @@ class Changelog:
 
     def _render(self, data: Dict[str, object]) -> str:
         """Render the template."""
-        return self._template.render(data).strip()
+        return TEMPLATE.render(data).strip()
 
     def get(self, version: str, sha: str) -> str:
         """Get the changelog for a specific version."""
