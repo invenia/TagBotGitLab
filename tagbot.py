@@ -4,6 +4,8 @@ import re
 import traceback
 
 import gitlab
+from changelog import Changelog
+
 
 # match on group3 to get everything after the host, i.e everything after the single '/'
 re_repo = re.compile("Repository:\\s*(http[s]?://)?([^/\\s]+/)(.*)")
@@ -87,8 +89,14 @@ def handle_merge(payload):
     if err:
         raise Exception("Parsing MR description failed. " + err)
     p = client.projects.get(repo, lazy=True)
+
     print(f"Creating tag {version} for {repo} at {commit}")
-    p.tags.create({"tag_name": version, "ref": commit})
+    tag = p.tags.create({"tag_name": version, "ref": commit})
+
+    changelog = Changelog(p)
+    release_notes = changelog.get(version, commit)
+    tag.set_release_description(release_notes)
+
     return f"Created tag {version} for {repo} at {commit}"
 
 

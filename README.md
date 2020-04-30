@@ -4,6 +4,8 @@
 
 A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for registries hosted on GitLab.
 
+Creates tags, releases, and changelogs when Julia packages are registered.
+
 ## Deployment
 
 - Install the [Serverless Framework](https://serverless.com).
@@ -25,3 +27,20 @@ A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for regis
 ---
 
 This code is tested on GitLab version `11.11.0-ee`.
+
+### Changelogs
+
+TagBotGitlab creates a changelog for each release based on the issues that have been closed and the merge requests that have been merged. Unlike [TagBot](https://github.com/JuliaRegistries/TagBot), TagBotGitLab currently does not support custom release notes or customizable templates.
+
+Issues and pull requests with specified labels are not included in the changelog data.
+By default, the following labels are ignored:
+
+- changelog skip
+- duplicate
+- exclude from changelog
+- invalid
+- no changelog
+- question
+- wont fix
+
+White-space, case, dashes, and underscores are ignored when comparing labels.
