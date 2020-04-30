@@ -82,13 +82,14 @@ class Changelog:
         """Collect merge requests in the interval."""
         merge_requests = []
         for x in self._repo.mergerequests.list(state="merged", updated_after=start, all=True):
-            merged_at = parser.parse(x.merged_at)
-            if merged_at <= start or merged_at > end:
-                continue
-            if self._ignore.intersection(self._slug(label) for label in x.labels):
-                continue
-            else:
-                merge_requests.append(x)
+            if x.merged_at is not None:
+                merged_at = parser.parse(x.merged_at)
+                if merged_at <= start or merged_at > end:
+                    continue
+                if self._ignore.intersection(self._slug(label) for label in x.labels):
+                    continue
+                else:
+                    merge_requests.append(x)
         merge_requests.reverse()  # Sort in chronological order.
         return merge_requests
 
