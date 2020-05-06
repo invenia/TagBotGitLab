@@ -1,14 +1,18 @@
-import gitlab
 import os.path
 import re
-import semver
-
-from dateutil import parser
 from datetime import datetime, timedelta, timezone
-from gitlab.v4.objects import Project, ProjectIssue, ProjectMergeRequest, ProjectTag
-from jinja2 import Template
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from urllib.parse import unquote
+
+import semver  # type: ignore
+from dateutil import parser
+from gitlab.v4.objects import (  # type: ignore
+    Project,
+    ProjectIssue,
+    ProjectMergeRequest,
+    ProjectTag,
+)
+from jinja2 import Template
 
 
 path = os.path.join(os.path.dirname(__file__), "template.md")
@@ -29,6 +33,7 @@ DEFAULT_IGNORE = [
 
 class Changelog:
     """A Changelog produces release notes for a single release."""
+
     _slug_re = re.compile(r"[\s_-]")
 
     def __init__(self, repo: Project):
@@ -41,14 +46,14 @@ class Changelog:
 
     def _previous_release(self, version: str) -> Optional[ProjectTag]:
         """Get the release previous to the current one (according to SemVer)."""
-        cur_ver = semver.parse_version_info(version[1:])
-        prev_ver = semver.parse_version_info("0.0.0")
+        cur_ver = semver.VersionInfo.parse(version[1:])
+        prev_ver = semver.VersionInfo.parse("0.0.0")
         prev_rel = None
         for tag in self._repo.tags.list(all=True):
             if not tag.name.startswith("v"):
                 continue
             try:
-                ver = semver.parse_version_info(tag.name[1:])
+                ver = semver.VersionInfo.parse(tag.name[1:])
             except ValueError:
                 continue
             if ver.prerelease or ver.build:
@@ -78,10 +83,14 @@ class Changelog:
         issues.reverse()  # Sort in chronological order.
         return issues
 
-    def _merge_requests(self, start: datetime, end: datetime) -> List[ProjectMergeRequest]:
+    def _merge_requests(
+        self, start: datetime, end: datetime
+    ) -> List[ProjectMergeRequest]:
         """Collect merge requests in the interval."""
         merge_requests = []
-        for x in self._repo.mergerequests.list(state="merged", updated_after=start, all=True):
+        for x in self._repo.mergerequests.list(
+            state="merged", updated_after=start, all=True
+        ):
             if x.merged_at is not None:
                 merged_at = parser.parse(x.merged_at)
                 if merged_at <= start or merged_at > end:
@@ -99,9 +108,9 @@ class Changelog:
             return None
 
         return {
-            "name": user['name'],
-            "url": user['web_url'],
-            "username": user['username'],
+            "name": user["name"],
+            "url": user["web_url"],
+            "username": user["username"],
         }
 
     def _format_issue(self, issue: ProjectIssue) -> Dict[str, object]:
@@ -139,7 +148,9 @@ class Changelog:
         prev_tag = None
         compare = None
         if previous:
-            previous_created_at = parser.parse(previous.attributes['commit']['created_at'])
+            previous_created_at = parser.parse(
+                previous.attributes["commit"]["created_at"]
+            )
             start = previous_created_at + timedelta(minutes=1)
             prev_tag = previous.name
             compare = f"{gitlab_url}/{repo}/-/compare/{prev_tag}...{version}"
