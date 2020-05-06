@@ -4,7 +4,7 @@ from os import path
 from setuptools import find_packages, setup
 
 
-TEST_DEPS = ["coverage", "pytest", "pytest-cov", "regex"]
+TEST_DEPS = ["coverage", "pytest", "pytest-cov"]
 DOCS_DEPS = ["sphinx", "sphinx-rtd-theme", "sphinx-autoapi", "recommonmark"]
 CHECK_DEPS = ["isort", "flake8", "flake8-quotes", "pep8-naming", "mypy", "black"]
 REQUIREMENTS = ["Jinja2", "python-dateutil", "python-gitlab", "semver"]
@@ -37,6 +37,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
     platforms=["any"],
