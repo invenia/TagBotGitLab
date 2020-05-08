@@ -1,0 +1,6 @@
+include tagbotgittlab/template.md
+include tagbotgitlab/VERSION
+include VERSION
+include README.md
+include LICENSE
+include CHANGES.md

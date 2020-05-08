@@ -1,9 +1,9 @@
-import gitlab
-import pytest
-
-from changelog import Changelog
 from datetime import datetime
 from unittest.mock import Mock
+
+import gitlab
+
+from tagbotgitlab.changelog import Changelog
 
 
 def test_previous_release():
@@ -12,10 +12,10 @@ def test_previous_release():
 
     tag_1 = Mock(spec=gitlab.v4.objects.ProjectTag)
     tag_1.name = "v0.0.1"
-    tag_1.attributes = {'commit': {'created_at': '2020-01-01 11:00:00'}}
+    tag_1.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
     tag_2 = Mock(spec=gitlab.v4.objects.ProjectTag)
     tag_2.name = "v0.0.2"
-    tag_2.attributes = {'commit': {'created_at': '2020-01-01 11:00:00'}}
+    tag_2.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
     p.tags.list = Mock(return_value=[tag_1, tag_2])
 
     changelog = Changelog(p)
@@ -31,7 +31,7 @@ def test_issues():
     p = Mock(spec=gitlab.v4.objects.Project)
 
     issue_1 = Mock(spec=gitlab.v4.objects.Issue)
-    issue_1.closed_at = '2020-01-01 11:00:00'
+    issue_1.closed_at = "2020-01-01 11:00:00"
     issue_1.labels = ["bugfix"]
 
     # This issue should not appear in any of the results
@@ -123,7 +123,7 @@ def test_format_issue():
     issue.description = ""
     issue.title = "Issue"
     issue.web_url = "https://gitlab.foo.com/foo/~/issues/1"
-    issue.closed_at = '2020-01-01 11:00:00'
+    issue.closed_at = "2020-01-01 11:00:00"
     issue.author = author
     issue.labels = ["bugfix"]
 
@@ -137,7 +137,7 @@ def test_format_issue():
         "labels": ["bugfix"],
         "number": issue.get_id(),
         "title": "Issue",
-        "url": "https://gitlab.foo.com/foo/~/issues/1"
+        "url": "https://gitlab.foo.com/foo/~/issues/1",
     }
     assert changelog._format_issue(issue) == expected
 
@@ -157,7 +157,7 @@ def test_format_mergerequest():
     merge_request.description = ""
     merge_request.title = "Merge Request"
     merge_request.web_url = "https://gitlab.foo.com/foo/~/merge_requests/1"
-    merge_request.merged_at = '2020-01-01 11:00:00'
+    merge_request.merged_at = "2020-01-01 11:00:00"
     merge_request.author = author
     merge_request.labels = ["bugfix"]
     merge_request.merged_by = author
@@ -174,7 +174,7 @@ def test_format_mergerequest():
         "merger": expected_user,
         "number": merge_request.get_id(),
         "title": "Merge Request",
-        "url": "https://gitlab.foo.com/foo/~/merge_requests/1"
+        "url": "https://gitlab.foo.com/foo/~/merge_requests/1",
     }
     assert changelog._format_merge_request(merge_request) == expected
 
@@ -190,14 +190,14 @@ def test_collect_data():
 
     prev_tag = Mock(spec=gitlab.v4.objects.ProjectTag)
     prev_tag.name = "v0.1.0"
-    prev_tag.attributes = {'commit': {'created_at': '2020-01-01 11:00:00'}}
+    prev_tag.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
     tag = Mock(spec=gitlab.v4.objects.ProjectTag)
     tag.name = "v0.1.2"
-    tag.attributes = {'commit': {'created_at': '2020-02-01 11:00:00'}}
+    tag.attributes = {"commit": {"created_at": "2020-02-01 11:00:00"}}
     p.tags.list = Mock(return_value=[prev_tag, tag])
 
     commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
-    commit.created_at = '2020-02-01 11:00:00'
+    commit.created_at = "2020-02-01 11:00:00"
     p.commits = Mock(spec=gitlab.v4.objects.ProjectCommitManager)
     p.commits.get = Mock(return_value=commit)
 
@@ -207,7 +207,7 @@ def test_collect_data():
         "username": "john.smith",
     }
     issue = Mock(spec=gitlab.v4.objects.Issue)
-    issue.closed_at = '2020-01-15 11:00:00'
+    issue.closed_at = "2020-01-15 11:00:00"
     issue.labels = []
     issue.author = author
     issue.description = ""
@@ -242,7 +242,7 @@ def test_collect_data():
         "merger": expected_user,
         "number": merge_request.get_id(),
         "title": "Merge Request",
-        "url": "https://gitlab.foo.com/foo/bar/~/merge_requests/2"
+        "url": "https://gitlab.foo.com/foo/bar/~/merge_requests/2",
     }
     expected_issue = {
         "author": expected_user,
@@ -250,7 +250,7 @@ def test_collect_data():
         "labels": [],
         "number": issue.get_id(),
         "title": "Issue",
-        "url": "https://gitlab.foo.com/foo/bar/~/issues/2"
+        "url": "https://gitlab.foo.com/foo/bar/~/issues/2",
     }
     expected = {
         "compare_url": "gitlab.foo.com/foo/bar/-/compare/v0.1.0...v0.1.2",

@@ -3,8 +3,9 @@ import os
 import re
 import traceback
 
-import gitlab
-from changelog import Changelog
+import gitlab  # type: ignore
+
+from tagbotgitlab.changelog import Changelog
 
 
 # match on group3 to get everything after the host, i.e everything after the single '/'
@@ -27,7 +28,7 @@ def handler(evt, _ctx):
             status, msg = 403, "Invalid token"
         else:
             status, msg = 200, handle_event(json.loads(evt.get("body", "{}")))
-    except:
+    except Exception:
         traceback.print_exc()
         status, msg = 500, "Runtime error"
     level = "INFO" if status == 200 else "ERROR"

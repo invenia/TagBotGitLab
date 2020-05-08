@@ -1,14 +1,14 @@
-import gitlab
-import pytest
-
 from os import environ as env
 from unittest.mock import Mock, patch
+
+import gitlab
+
 
 # Set some environment variables required for import.
 env["REGISTRATOR_ID"] = "0"
 env["GITLAB_URL"] = env["GITLAB_API_TOKEN"] = env["GITLAB_WEBHOOK_TOKEN"] = "abc"
 
-import tagbot
+import tagbotgitlab.tagbot as tagbot  # isort:skip  # noqa: E731
 
 
 good_body = """
@@ -37,7 +37,9 @@ def test_parse_body():
     assert err == "No commit match"
 
     # with protocol in url
-    body = "Repository: https://gitlab.foo.com/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    body = (
+        "Repository: https://gitlab.foo.com/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    )
     repo, version, commit, err = tagbot.parse_body(body)
     assert repo == "goodRepo"
 
@@ -52,7 +54,9 @@ def test_parse_body():
     assert repo == "p1/goodRepo"
 
     # multiple repo prefixs
-    body = "Repository: gitlab.foo.com/p1/p2/p3/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    body = (
+        "Repository: gitlab.foo.com/p1/p2/p3/goodRepo\nVersion: v0.1.2\nCommit: abcdef"
+    )
     repo, version, commit, err = tagbot.parse_body(body)
     assert repo == "p1/p2/p3/goodRepo"
 
@@ -65,7 +69,7 @@ def test_get_in():
     assert tagbot.get_in(d, "b", default="foo") == "foo"
 
 
-@patch("tagbot.handle_event")
+@patch("tagbotgitlab.tagbot.handle_event")
 def test_handler(handle_event):
     assert tagbot.handler({}, None) == {"statusCode": 403, "body": "Invalid token"}
     assert tagbot.handler({"headers": {"X-Gitlab-Token": "aaa"}}, None) == {
@@ -79,34 +83,36 @@ def test_handler(handle_event):
     assert tagbot.handler(d, None) == {"statusCode": 500, "body": "Runtime error"}
 
 
-@patch("tagbot.handle_merge")
-@patch("tagbot.handle_open")
+@patch("tagbotgitlab.tagbot.handle_merge")
+@patch("tagbotgitlab.tagbot.handle_open")
 def test_handle_event(handle_open, handle_merge):
     # empty payload
     payload = {}
-    assert tagbot.handle_event(payload) == \
-        "MR not created by Registrator, MR created by author_id: None"
+    assert (
+        tagbot.handle_event(payload)
+        == "MR not created by Registrator, MR created by author_id: None"
+    )
 
     # an event that's not triggered by the registrar
     payload = {"object_attributes": {"author_id": 1}}
-    assert tagbot.handle_event(payload) == \
-        "MR not created by Registrator, MR created by author_id: 1"
+    assert (
+        tagbot.handle_event(payload)
+        == "MR not created by Registrator, MR created by author_id: 1"
+    )
 
     # registrar triggered but not a merge request
-    payload = {
-        "object_attributes": {"author_id": 0},
-        "object_kind": "push"
-    }
-    assert tagbot.handle_event(payload) == \
-        "Not an MR event, Skipping event: push"
+    payload = {"object_attributes": {"author_id": 0}, "object_kind": "push"}
+    assert tagbot.handle_event(payload) == "Not an MR event, Skipping event: push"
 
     # registrar merge_request but irrelevent action
     payload = {
         "object_attributes": {"author_id": 0, "action": "approve"},
-        "object_kind": "merge_request"
+        "object_kind": "merge_request",
     }
-    assert tagbot.handle_event(payload) == \
-        "Skipping event, irrelevent or missing action: approve"
+    assert (
+        tagbot.handle_event(payload)
+        == "Skipping event, irrelevent or missing action: approve"
+    )
 
     # registrar merge_request with open action
     payload = {
@@ -138,14 +144,14 @@ def test_handle_merge():
 
     prev_tag = Mock(spec=gitlab.v4.objects.ProjectTag)
     prev_tag.name = "v0.1.0"
-    prev_tag.attributes = {'commit': {'created_at': '2020-01-01 11:00:00'}}
+    prev_tag.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
     tag = Mock(spec=gitlab.v4.objects.ProjectTag)
     tag.name = "v0.1.2"
-    tag.attributes = {'commit': {'created_at': '2020-02-01 11:00:00'}}
+    tag.attributes = {"commit": {"created_at": "2020-02-01 11:00:00"}}
     p.tags.list = Mock(return_value=[prev_tag, tag])
 
     commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
-    commit.created_at = '2020-02-01 11:00:00'
+    commit.created_at = "2020-02-01 11:00:00"
     p.commits = Mock(spec=gitlab.v4.objects.ProjectCommitManager)
     p.commits.get = Mock(return_value=commit)
 
@@ -155,7 +161,7 @@ def test_handle_merge():
         "username": "john.smith",
     }
     issue = Mock(spec=gitlab.v4.objects.Issue)
-    issue.closed_at = '2020-01-15 11:00:00'
+    issue.closed_at = "2020-01-15 11:00:00"
     issue.labels = []
     issue.author = author
     issue.description = ""
@@ -177,13 +183,17 @@ def test_handle_merge():
 
     # not a merge action
     payload = {"object_attributes": {"action": "open"}}
-    assert tagbot.handle_merge(payload) == \
-        "Skipping event, not a merge action. action: open"
+    assert (
+        tagbot.handle_merge(payload)
+        == "Skipping event, not a merge action. action: open"
+    )
 
     # merge action but not a merged state
     payload = {"object_attributes": {"action": "merge", "state": "conflict"}}
-    assert tagbot.handle_merge(payload) == \
-        "Skipping event, not a merged state. state: conflict"
+    assert (
+        tagbot.handle_merge(payload)
+        == "Skipping event, not a merged state. state: conflict"
+    )
 
     # merge action and merged state, but not to the default branch
     payload = {
@@ -191,11 +201,10 @@ def test_handle_merge():
             "action": "merge",
             "state": "merged",
             "target_branch": "develop",
-            "target": {"default_branch": "master"}
+            "target": {"default_branch": "master"},
         }
     }
-    assert tagbot.handle_merge(payload) == \
-        "Target branch is not the default"
+    assert tagbot.handle_merge(payload) == "Target branch is not the default"
 
     # merge action, merged state, default branch, but invalid MR description.
     payload = {
@@ -210,9 +219,9 @@ def test_handle_merge():
     try:
         parse_fail = False
         tagbot.handle_merge(payload)
-    except:
+    except Exception:
         parse_fail = True
-    assert (parse_fail)
+    assert parse_fail
 
     # all valid
     payload = {
@@ -224,8 +233,7 @@ def test_handle_merge():
             "description": good_body,
         }
     }
-    assert tagbot.handle_merge(payload) == \
-        "Created tag v0.1.2 for foo/bar at abcdef"
+    assert tagbot.handle_merge(payload) == "Created tag v0.1.2 for foo/bar at abcdef"
     tagbot.client.projects.get.assert_called_once_with("foo/bar", lazy=True)
     p.tags.create.assert_called_once_with({"tag_name": "v0.1.2", "ref": "abcdef"})
 
@@ -246,8 +254,10 @@ def test_handle_open():
     assert tagbot.handle_open({"changes": {"iid": {"previous": 1}}}) == "Not a new MR"
 
     # all valid, performs merge
-    assert tagbot.handle_open({"object_attributes": {"source_project_id": 1}}) == \
-        "Approved and merged."
+    assert (
+        tagbot.handle_open({"object_attributes": {"source_project_id": 1}})
+        == "Approved and merged."
+    )
     tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
     mr.approve.assert_called_once_with()
     mr.merge.assert_called_once_with(

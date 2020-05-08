@@ -1,6 +1,15 @@
+sudo: false
 language: python
-python: 3.7
-dist: xenial
-notifications: {email: false}
-before_script: pip install pytest
-script: pytest
+python:
+  - "3.7"
+  - "3.8"
+install:
+  - pip install tox-travis
+  - pip install coveralls
+script:
+  - tox -r
+after_success:
+  - coveralls
+
+
+# I am currently not sure how we want to generate documentation for github projects

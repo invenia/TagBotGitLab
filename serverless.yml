@@ -5,12 +5,12 @@ package:
   exclude:
     - ./**
   include:
-    - ./tagbot.py
-    - ./changelog.py
-    - ./template.md
+    - ./tagbotgitlab/tagbot.py
+    - ./tagbotgitlab/changelog.py
+    - ./tagbotgitlab/template.md
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.8
   environment:
     AUTOMATIC_MERGE: ${env:AUTOMATIC_MERGE}
     GITLAB_URL: ${env:GITLAB_URL}
@@ -19,7 +19,7 @@ provider:
     REGISTRATOR_ID: ${env:REGISTRATOR_ID}
 functions:
   gitlab:
-    handler: tagbot.handler
+    handler: tagbotgitlab.tagbot.handler
     events:
       - http:
           path: gitlab

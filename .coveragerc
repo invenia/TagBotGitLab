@@ -1,0 +1,17 @@
+[run]
+relative_files = True
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = True
+exclude_lines =
+    # Ignore unreachable code
+    if __name__ == .__main__.:
+
+    # Ignore __str__ and __repr__ functions
+    def __str__
+    def __repr__
+
+    # Specifically ignore a line with this text
+    pragma: no cover
