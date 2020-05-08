@@ -24,3 +24,6 @@ functions:
       - http:
           path: gitlab
           method: post
+custom:
+  pythonRequirements:
+    usePoetry: false
