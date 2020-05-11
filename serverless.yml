@@ -19,7 +19,7 @@ provider:
     REGISTRATOR_ID: ${env:REGISTRATOR_ID}
 functions:
   gitlab:
-    handler: tagbotgitlab.tagbot.handler
+    handler: tagbotgitlab/tagbot.handler
     events:
       - http:
           path: gitlab
