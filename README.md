@@ -1,14 +1,13 @@
 # Julia TagBot for GitLab
 
-[![Build Status](https://travis-ci.org/invenia/tagbotgitlab.svg?branch=master)](https://travis-ci.org/invenia/tagbotgitlab?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/invenia/tagbotgitlab/badge.svg?branch=master)](https://coveralls.io/github/invenia/tagbotgitlab)
+[![CI](https://github.com/Invenia/TabBotGitlab/workflows/CI/badge.svg)](https://github.com/Invenia/DateSelectors.jl/actions?query=workflow%3ACI)
 [![Python Version](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://www.python.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for registries hosted on GitLab.
 
 Automatically merges MRs, creates tags on the merge, and sets the corresponding release notes.
-Our Julia packages are registered in a private Julia package registry hosted on a GitLab repository and the MRs that get automatically merged are made by [Registrator.jl](https://github.com/JuliaRegistries/Registrator.jl)).
+Our Julia packages are registered in a private Julia package registry hosted on a GitLab repository and the MRs that get automatically merged are made by [Registrator.jl](https://github.com/JuliaRegistries/Registrator.jl).
 Each MR registers a new package or a new version of a Julia package.
 Even though we host a private Registrator deployment, this can be used on any GitLab Julia package registry repository independently from where the MRs originate.
 

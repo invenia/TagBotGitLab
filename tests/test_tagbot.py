@@ -8,7 +8,7 @@ import gitlab
 env["REGISTRATOR_ID"] = "0"
 env["GITLAB_URL"] = env["GITLAB_API_TOKEN"] = env["GITLAB_WEBHOOK_TOKEN"] = "abc"
 
-import tagbotgitlab.tagbot as tagbot  # isort:skip  # noqa: E731
+import tagbotgitlab.tagbot as tagbot  # isort:skip  # noqa: E402
 
 
 good_body = """
