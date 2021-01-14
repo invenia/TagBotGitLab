@@ -67,7 +67,7 @@ def handle_open(payload):
     mr = p.mergerequests.get(mr_id, lazy=True)
     print("Approving MR")
     mr.approve()
-    # Add printing the MR state to assit in debugging cases where the mr.merge() below
+    # Add printing the MR state to assist in debugging cases where the mr.merge() below
     # returns an error
     mr = p.mergerequests.get(mr_id, lazy=False)
     print(mr)
