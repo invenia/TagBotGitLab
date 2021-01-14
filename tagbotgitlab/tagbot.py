@@ -65,8 +65,13 @@ def handle_open(payload):
     p = client.projects.get(p_id, lazy=True)
     mr_id = get_in(payload, "changes", "iid", "current")
     mr = p.mergerequests.get(mr_id, lazy=True)
-    print("Approving and merging MR")
+    print("Approving MR")
     mr.approve()
+    # Add printing the MR state to assist in debugging cases where the mr.merge() below
+    # returns an error
+    mr = p.mergerequests.get(mr_id, lazy=False)
+    print(mr)
+    print("Merging MR")
     mr.merge(merge_when_pipeline_succeeds=True, should_remove_source_branch=True)
     return "Approved and merged."
 
