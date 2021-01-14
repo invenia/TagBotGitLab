@@ -1,6 +1,6 @@
 # Julia TagBot for GitLab
 
-[![Build Status](https://travis-ci.org/invenia/tagbotgitlab.svg?branch=master)](https://travis-ci.org/invenia/tagbotgitlab?branch=master)
+[![CI](https://github.com/Invenia/TabBotGitlab/workflows/CI/badge.svg)](https://github.com/Invenia/DateSelectors.jl/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/invenia/tagbotgitlab/badge.svg?branch=master)](https://coveralls.io/github/invenia/tagbotgitlab)
 [![Python Version](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://www.python.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
