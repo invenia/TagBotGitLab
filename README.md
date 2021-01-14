@@ -7,7 +7,7 @@
 A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for registries hosted on GitLab.
 
 Automatically merges MRs, creates tags on the merge, and sets the corresponding release notes.
-Our Julia packages are registered in a private Julia package registry hosted on a GitLab repository and the MRs that get automatically merged are made by [Registrator.jl](https://github.com/JuliaRegistries/Registrator.jl)).
+Our Julia packages are registered in a private Julia package registry hosted on a GitLab repository and the MRs that get automatically merged are made by [Registrator.jl](https://github.com/JuliaRegistries/Registrator.jl).
 Each MR registers a new package or a new version of a Julia package.
 Even though we host a private Registrator deployment, this can be used on any GitLab Julia package registry repository independently from where the MRs originate.
 

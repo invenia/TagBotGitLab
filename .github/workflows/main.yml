@@ -48,9 +48,6 @@ jobs:
       - name: Run Python Tests
         run: tox
 
-      - name: Show items
-        run: ls -la
-
       # Upload Coverage Artifacts
       - name: Upload Coverage Data
         uses: actions/upload-artifact@v2
