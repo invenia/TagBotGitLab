@@ -7,14 +7,37 @@
 
 A minimal clone of [TagBot](https://github.com/JuliaRegistries/TagBot) for registries hosted on GitLab.
 
-Creates tags, releases, and changelogs when Julia packages are registered.
+Automatically merges merge requests that were made to register new versions of package, creates tags, and sets the corresponding release notes when Julia packages are registered in a private registry repository hosted on GitLab.
+The merge requests originate from a private Registrator deployment (see [Registrator.jl](https://github.com/JuliaRegistries/Registrator.jl)) but this can be used on any GitLab repository where you wan the same actions to happen independently from where the MRs originate.
 
 ## License
 
 tagbotgitlab is provided under an MIT License.
 
+## Future Direction
+This package is not uploaded to PyPI for now, but we hope to upload it eventually so that things like the `Changelog` can be used seprately from the automatic merging of GitLab MRs.
+
+The vision is to use only the `Changelog` on our prod repository when manual tags are made to populate the release notes automatically.
+
+
+## Installation
+To install this just install it into a virtualenv like so:
+
+```
+cd TagBotGitLab
+python -m venv venv
+. venv/bin/activate
+
+pip install --upgrade pip
+pip install -e .
+```
+
 ## Deployment
 
+To properly use this package you will likely want to deploy it to be used on a GitLab repository.
+We use AWS but you can update the `serverless.yml` file to deploy on other platforms.
+
+Steps:
 - Install the [Serverless Framework](https://serverless.com).
 - Run `npm install`.
 - Set the following environment variables:
@@ -35,7 +58,7 @@ tagbotgitlab is provided under an MIT License.
 
 This code is tested on GitLab version `11.11.0-ee`.
 
-### Changelogs
+### Changelogs (Release Notes)
 
 TagBotGitlab creates a changelog for each release based on the issues that have been closed and the merge requests that have been merged. Unlike [TagBot](https://github.com/JuliaRegistries/TagBot), TagBotGitLab currently does not support custom release notes or customizable templates.
 
