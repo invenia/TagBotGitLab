@@ -33,11 +33,15 @@ def test_issues():
     issue_1 = Mock(spec=gitlab.v4.objects.Issue)
     issue_1.closed_at = "2020-01-01 11:00:00"
     issue_1.labels = ["bugfix"]
+    # State this issue was closed by MR with iid 1
+    issue_1.closed_by = Mock(return_value=[{"iid": "1"}])
 
     # This issue should not appear in any of the results
     issue_2 = Mock(spec=gitlab.v4.objects.MergeRequest)
     issue_2.closed_at = "2020-01-01 11:00:00"
     issue_2.labels = ["changelog_skip"]
+    # State this issue was closed by MR with iid 2
+    issue_2.closed_by = Mock(return_value=[{"iid": "2"}])
 
     all_issues = [issue_1, issue_2]
     p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
@@ -46,33 +50,36 @@ def test_issues():
     changelog = Changelog(p)
 
     start = datetime(2020, 1, 1, 10, 59)
-    end = datetime(2020, 1, 1, 12)
-    assert changelog._issues(start, end) == [issue_1]
+    included_mrs_in_tag = ["1"]
+    assert changelog._issues(start, included_mrs_in_tag) == [issue_1]
 
-    # Test doesn't include starting point
-    start = datetime(2020, 1, 1, 11)
-    assert changelog._issues(start, end) == []
+    # Test including MR that closes issue that is labeled to be skipped
+    included_mrs_in_tag = ["1", "2"]
+    assert changelog._issues(start, included_mrs_in_tag) == [issue_1]
 
-    # Test includes end point
-    start = datetime(2020, 1, 1, 10)
-    end = datetime(2020, 1, 1, 11)
-    assert changelog._issues(start, end) == [issue_1]
+    # Test with the API saying issue_1 was not updated after start
+    p.issues.list = Mock(return_value=[issue_2])
+    assert changelog._issues(start, included_mrs_in_tag) == []
 
 
 def test_merge_requests():
     p = Mock(spec=gitlab.v4.objects.Project)
 
-    merge_request_1 = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request_1 = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     merge_request_1.merged_at = "2020-01-01 11:00:00"
     merge_request_1.labels = []
-    merge_request_2 = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request_1.merge_commit_sha = "1a2b3c"
+
+    merge_request_2 = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     merge_request_2.merged_at = "2020-01-01 20:00:00"
     merge_request_2.labels = ["bugfix"]
+    merge_request_2.merge_commit_sha = "2b3c4d"
 
     # This merge request should not appear in any of the results
-    merge_request_3 = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request_3 = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     merge_request_3.merged_at = "2020-01-01 20:00:00"
     merge_request_3.labels = ["changelog_skip"]
+    merge_request_3.merge_commit_sha = "3c4d4e"
 
     all_merge_requests = [merge_request_1, merge_request_2, merge_request_3]
     p.mergerequests = Mock(spec=gitlab.v4.objects.MergeRequestManager)
@@ -81,31 +88,30 @@ def test_merge_requests():
     changelog = Changelog(p)
 
     start = datetime(2020, 1, 1, 10, 59)
-    end = datetime(2020, 1, 1, 12)
-    assert changelog._merge_requests(start, end) == [merge_request_1]
+    commit_shas = ["1a2b3c"]
+    assert changelog._merge_requests(start, commit_shas) == [merge_request_1]
 
-    # Test doesn't include starting point
-    start = datetime(2020, 1, 1, 11)
-    end = datetime(2020, 1, 1, 12)
-    assert changelog._merge_requests(start, end) == []
-
-    # Test includes end point
+    # Test MR that is labelled with a skip label is not included
     start = datetime(2020, 1, 1, 10)
-    end = datetime(2020, 1, 1, 11)
-    assert changelog._merge_requests(start, end) == [merge_request_1]
+    commit_shas = ["1a2b3c", "3c4d4e"]
+    assert changelog._merge_requests(start, commit_shas) == [merge_request_1]
 
-    # Test returns in reverse chronological order
+    # Test returns in chronological order
     start = datetime(2020, 1, 1, 10, 59)
-    end = datetime(2020, 1, 1, 20)
-    assert changelog._merge_requests(start, end) == [merge_request_2, merge_request_1]
+    commit_shas = ["1a2b3c", "2b3c4d", "3c4d4e"]
+    assert changelog._merge_requests(start, commit_shas) == [
+        merge_request_1,
+        merge_request_2,
+    ]
 
+    # Test with only the 2nd and 3rd MRs included in the commits diff since the prev tag
     start = datetime(2020, 1, 1, 13)
-    end = datetime(2020, 1, 1, 20)
-    assert changelog._merge_requests(start, end) == [merge_request_2]
+    commit_shas = ["2b3c4d", "3c4d4e"]
+    assert changelog._merge_requests(start, commit_shas) == [merge_request_2]
 
-    start = datetime(2015, 1, 1)
-    end = datetime(2015, 1, 2)
-    assert changelog._merge_requests(start, end) == []
+    # Test when the API doesn't return any merge requests
+    p.mergerequests.list = Mock(return_value=[])
+    assert changelog._merge_requests(start, commit_shas) == []
 
 
 def test_format_issue():
@@ -184,6 +190,10 @@ def test_collect_data():
     p.get_id = Mock(return_value="foo/bar")
     changelog = Changelog(p)
 
+    # Set up tags
+    version = "v0.1.2"
+    commit_sha = "abcdef"
+
     p.tags = Mock(spec=gitlab.v4.objects.ProjectTagManager)
     p.tags.gitlab = Mock(spec=gitlab.Gitlab)
     p.tags.gitlab.url = "gitlab.foo.com"
@@ -191,45 +201,84 @@ def test_collect_data():
     prev_tag = Mock(spec=gitlab.v4.objects.ProjectTag)
     prev_tag.name = "v0.1.0"
     prev_tag.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
+
     tag = Mock(spec=gitlab.v4.objects.ProjectTag)
-    tag.name = "v0.1.2"
+    tag.name = version
     tag.attributes = {"commit": {"created_at": "2020-02-01 11:00:00"}}
+
     p.tags.list = Mock(return_value=[prev_tag, tag])
 
+    # Set up commits
     commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
+    commit.id = commit_sha
     commit.created_at = "2020-02-01 11:00:00"
+
     p.commits = Mock(spec=gitlab.v4.objects.ProjectCommitManager)
     p.commits.get = Mock(return_value=commit)
 
+    commits_detail = {"commits": [{"id": commit_sha}]}
+    p.repository_compare = Mock(return_value=commits_detail)
+
+    # Set up GitLab user
     author = {
         "name": "John Smith",
         "web_url": "https://gitlab.foo.com/john.smith",
         "username": "john.smith",
     }
+
+    # Set up merged merge requests in the repo
+    merge_request = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request.merged_at = "2020-01-15 11:00:00"
+    merge_request.labels = []
+    merge_request.merge_commit_sha = commit_sha
+    merge_request.iid = "1"
+    merge_request.author = author
+    merge_request.description = ""
+    merge_request.title = "Merge Request"
+    merge_request.web_url = "https://gitlab.foo.com/foo/bar/~/merge_requests/1"
+    merge_request.merged_by = author
+
+    # Note this merge request is not included in the commits returned from
+    # repository_compare (not part of the tag) so it should not appear in the result
+    # even though it was merged during the time interval between the previous tag
+    # and this tag
+    merge_request_2 = Mock(spec=gitlab.v4.objects.MergeRequest)
+    merge_request_2.merged_at = "2020-01-15 11:00:00"
+    merge_request_2.labels = []
+    merge_request_2.merge_commit_sha = "2b3c4d"
+    merge_request_2.iid = "2"
+
+    p.mergerequests = Mock(spec=gitlab.v4.objects.MergeRequestManager)
+    p.mergerequests.list = Mock(return_value=[merge_request, merge_request_2])
+
+    # Set up closed issues in the repo
     issue = Mock(spec=gitlab.v4.objects.Issue)
     issue.closed_at = "2020-01-15 11:00:00"
+    issue.closed_by = Mock(return_value=[{"iid": merge_request.iid}])
     issue.labels = []
     issue.author = author
     issue.description = ""
     issue.title = "Issue"
-    issue.web_url = "https://gitlab.foo.com/foo/bar/~/issues/2"
+    issue.web_url = "https://gitlab.foo.com/foo/bar/~/issues/1"
+
+    # Note this issue was not closed by a MR that belongs to the tag so it should
+    # not appear in the release notes even though it was closed during the time interval
+    # between the previous tag and this tag
+    issue_2 = Mock(spec=gitlab.v4.objects.Issue)
+    issue_2.closed_at = "2020-01-15 11:00:00"
+    issue_2.closed_by = Mock(return_value=[{"iid": merge_request_2.iid}])
+
+    # Note this issue was not closed by a MR that belongs to the tag so it should
+    # not appear in the release notes even though it was closed during the time interval
+    # between the previous tag and this tag
+    issue_3 = Mock(spec=gitlab.v4.objects.Issue)
+    issue_3.closed_at = "2020-01-15 11:00:00"
+    issue_3.closed_by = Mock(return_value=[])
+
     p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
-    p.issues.list = Mock(return_value=[issue])
+    p.issues.list = Mock(return_value=[issue, issue_2, issue_3])
 
-    merge_request = Mock(spec=gitlab.v4.objects.MergeRequest)
-    merge_request.merged_at = "2020-01-15 11:00:00"
-    merge_request.labels = []
-    merge_request.author = author
-    merge_request.description = ""
-    merge_request.title = "Merge Request"
-    merge_request.web_url = "https://gitlab.foo.com/foo/bar/~/merge_requests/2"
-    merge_request.merged_by = author
-    p.mergerequests = Mock(spec=gitlab.v4.objects.MergeRequestManager)
-    p.mergerequests.list = Mock(return_value=[merge_request])
-
-    version = "v0.1.2"
-    commit = "abcdef"
-
+    # Test changelog returned is as expected
     expected_user = {
         "name": "John Smith",
         "url": "https://gitlab.foo.com/john.smith",
@@ -242,7 +291,7 @@ def test_collect_data():
         "merger": expected_user,
         "number": merge_request.get_id(),
         "title": "Merge Request",
-        "url": "https://gitlab.foo.com/foo/bar/~/merge_requests/2",
+        "url": "https://gitlab.foo.com/foo/bar/~/merge_requests/1",
     }
     expected_issue = {
         "author": expected_user,
@@ -250,7 +299,7 @@ def test_collect_data():
         "labels": [],
         "number": issue.get_id(),
         "title": "Issue",
-        "url": "https://gitlab.foo.com/foo/bar/~/issues/2",
+        "url": "https://gitlab.foo.com/foo/bar/~/issues/1",
     }
     expected = {
         "compare_url": "gitlab.foo.com/foo/bar/-/compare/v0.1.0...v0.1.2",
@@ -258,8 +307,8 @@ def test_collect_data():
         "package": "bar",
         "previous_release": prev_tag.name,
         "merge_requests": [expected_merge_request],
-        "sha": commit,
+        "sha": commit_sha,
         "version": version,
         "version_url": "gitlab.foo.com/foo/bar/tree/v0.1.2",
     }
-    assert changelog._collect_data(version, commit) == expected
+    assert changelog._collect_data(version, commit_sha) == expected

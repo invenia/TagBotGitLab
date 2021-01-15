@@ -151,28 +151,25 @@ def test_handle_merge():
     p.tags.list = Mock(return_value=[prev_tag, tag])
 
     commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
+    commit.id = "1a2b3c"
     commit.created_at = "2020-02-01 11:00:00"
     p.commits = Mock(spec=gitlab.v4.objects.ProjectCommitManager)
     p.commits.get = Mock(return_value=commit)
+
+    commits_detail = {"commits": [{"id": commit.id}]}
+    p.repository_compare = Mock(return_value=commits_detail)
 
     author = {
         "name": "John Smith",
         "web_url": "https://gitlab.foo.com/john.smith",
         "username": "john.smith",
     }
-    issue = Mock(spec=gitlab.v4.objects.Issue)
-    issue.closed_at = "2020-01-15 11:00:00"
-    issue.labels = []
-    issue.author = author
-    issue.description = ""
-    issue.title = "Issue"
-    issue.web_url = "https://gitlab.foo.com/foo/bar/~/issues/2"
-    p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
-    p.issues.list = Mock(return_value=[issue])
 
     merge_request = Mock(spec=gitlab.v4.objects.MergeRequest)
     merge_request.merged_at = "2020-01-15 11:00:00"
     merge_request.labels = []
+    merge_request.merge_commit_sha = "1a2b3c"
+    merge_request.iid = "1"
     merge_request.author = author
     merge_request.description = ""
     merge_request.title = "Merge Request"
@@ -180,6 +177,17 @@ def test_handle_merge():
     merge_request.merged_by = author
     p.mergerequests = Mock(spec=gitlab.v4.objects.MergeRequestManager)
     p.mergerequests.list = Mock(return_value=[merge_request])
+
+    issue = Mock(spec=gitlab.v4.objects.Issue)
+    issue.closed_at = "2020-01-15 11:00:00"
+    issue.closed_by = Mock(return_value=[{"iid": merge_request.iid}])
+    issue.labels = []
+    issue.author = author
+    issue.description = ""
+    issue.title = "Issue"
+    issue.web_url = "https://gitlab.foo.com/foo/bar/~/issues/2"
+    p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
+    p.issues.list = Mock(return_value=[issue])
 
     # not a merge action
     payload = {"object_attributes": {"action": "open"}}

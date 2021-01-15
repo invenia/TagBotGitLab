@@ -66,40 +66,49 @@ class Changelog:
                 prev_ver = ver
         return prev_rel
 
-    def _issues(self, start: datetime, end: datetime) -> List[ProjectIssue]:
-        """Collect issues that were closed in the interval."""
+    def _issues(self, start: datetime, merge_request_ids: List) -> List[ProjectIssue]:
+        """Collect issues that were closed by merge requests in the tag."""
         issues = []
-        for x in self._repo.issues.list(state="closed", updated_after=start, all=True):
-            # If a previous release's last commit closed an issue, then that issue
-            # should be included in the previous release's changelog and not this one.
-            # The interval includes the endpoint for this same reason.
-            closed_at = parser.parse(x.closed_at)
-            if closed_at <= start or closed_at > end:
-                continue
-            if self._ignore.intersection(self._slug(label) for label in x.labels):
-                continue
-            else:
+
+        # Only include issues that were explicitly closed by merge requests in this tag
+        # This errs on the side of minimizing false positives in favour of occasionally
+        # missing issues that should belong to a tag (issues closed that were't
+        # closed by the corresponding MR aren't included)
+        for x in self._repo.issues.list(
+            state="closed",
+            updated_after=start,
+            all=True,
+            order_by="updated_at",
+            sort="asc",
+        ):
+            if any(mr["iid"] in merge_request_ids for mr in x.closed_by()):
+                if self._ignore.intersection(self._slug(label) for label in x.labels):
+                    continue
                 issues.append(x)
-        issues.reverse()  # Sort in chronological order.
+
         return issues
 
     def _merge_requests(
-        self, start: datetime, end: datetime
+        self, start: datetime, commit_shas: List
     ) -> List[ProjectMergeRequest]:
-        """Collect merge requests in the interval."""
+        """Collect merge requests that are related to the new commits in the tag."""
         merge_requests = []
+
+        # Have to list all merge requests and cross reference to the commits in this tag
+        # as commit.merge_requests() doesn't work for mrs that squash their commits
+        # on merge
         for x in self._repo.mergerequests.list(
-            state="merged", updated_after=start, all=True
+            state="merged",
+            updated_after=start,
+            all=True,
+            order_by="updated_at",
+            sort="asc",
         ):
-            if x.merged_at is not None:
-                merged_at = parser.parse(x.merged_at)
-                if merged_at <= start or merged_at > end:
-                    continue
+            if x.merge_commit_sha in commit_shas:
                 if self._ignore.intersection(self._slug(label) for label in x.labels):
                     continue
-                else:
-                    merge_requests.append(x)
-        merge_requests.reverse()  # Sort in chronological order.
+                merge_requests.append(x)
+
         return merge_requests
 
     def _format_user(self, user: Optional[Dict]) -> Optional[Dict[str, object]]:
@@ -143,6 +152,8 @@ class Changelog:
         gitlab_url = self._repo.tags.gitlab.url
         repo = unquote(self._repo.get_id())
         project_name = repo.split("/")[-1]
+
+        # Get previous tag if it exists to compare this tag to
         previous = self._previous_release(version)
         start = datetime.fromtimestamp(0, tz=timezone.utc)
         prev_tag = None
@@ -155,12 +166,16 @@ class Changelog:
             prev_tag = previous.name
             compare = f"{gitlab_url}/{repo}/-/compare/{prev_tag}...{version}"
 
-        # When the last commit is a PR merge, the commit happens a second or two before
-        # the PR and associated issues are closed.
-        commit_creation = parser.parse(self._repo.commits.get(id=commit_sha).created_at)
-        end = commit_creation + timedelta(minutes=1)
-        issues = self._issues(start, end)
-        merge_requests = self._merge_requests(start, end)
+        tag_commits = self._repo.repository_compare(prev_tag, version)["commits"]
+
+        # Get merge requests where the merge commit is one of the commits in the tag
+        # Works even for merge requests that squash their commits on merge
+        tag_commit_shas = [commit_detail["id"] for commit_detail in tag_commits]
+        merge_requests = self._merge_requests(start, tag_commit_shas)
+
+        # Get issues that were explicitly closed by MRs in the tag
+        issues = self._issues(start, [mr.iid for mr in merge_requests])
+
         return {
             "compare_url": compare,
             "issues": [self._format_issue(i) for i in issues],
