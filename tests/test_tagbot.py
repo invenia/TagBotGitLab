@@ -180,7 +180,7 @@ def test_handle_merge():
 
     issue = Mock(spec=gitlab.v4.objects.Issue)
     issue.closed_at = "2020-01-15 11:00:00"
-    issue.closed_by =  Mock(return_value=[{"iid": merge_request.iid}])
+    issue.closed_by = Mock(return_value=[{"iid": merge_request.iid}])
     issue.labels = []
     issue.author = author
     issue.description = ""

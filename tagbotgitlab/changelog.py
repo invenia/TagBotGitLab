@@ -90,7 +90,7 @@ class Changelog:
 
     def _merge_requests(
         self, start: datetime, commit_shas: List
-) -> List[ProjectMergeRequest]:
+    ) -> List[ProjectMergeRequest]:
         """Collect merge requests that are related to the commits since the previous tag."""
         merge_requests = []
 
@@ -147,7 +147,6 @@ class Changelog:
             "url": merge_request.web_url,
         }
 
-
     def _collect_data(self, version: str, commit_sha: str) -> Dict[str, object]:
         """Collect data needed to create the changelog."""
         gitlab_url = self._repo.tags.gitlab.url
@@ -167,7 +166,7 @@ class Changelog:
             prev_tag = previous.name
             compare = f"{gitlab_url}/{repo}/-/compare/{prev_tag}...{version}"
 
-        tag_commits = self._repo.repository_compare(prev_tag, version)['commits']
+        tag_commits = self._repo.repository_compare(prev_tag, version)["commits"]
 
         # Get merge requests where the merge commit is one of the commits in the tag
         # Works even for merge requests that squash their commits on merge

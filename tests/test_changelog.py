@@ -34,13 +34,13 @@ def test_issues():
     issue_1.closed_at = "2020-01-01 11:00:00"
     issue_1.labels = ["bugfix"]
     # State this issue was closed by MR with iid 1
-    issue_1.closed_by =  Mock(return_value=[{"iid": "1"}])
+    issue_1.closed_by = Mock(return_value=[{"iid": "1"}])
 
     # This issue should not appear in any of the results
     issue_2 = Mock(spec=gitlab.v4.objects.MergeRequest)
     issue_2.closed_at = "2020-01-01 11:00:00"
     issue_2.labels = ["changelog_skip"]
-     # State this issue was closed by MR with iid 2
+    # State this issue was closed by MR with iid 2
     issue_2.closed_by = Mock(return_value=[{"iid": "2"}])
 
     all_issues = [issue_1, issue_2]
@@ -254,7 +254,7 @@ def test_collect_data():
     # Set up closed issues in the repo
     issue = Mock(spec=gitlab.v4.objects.Issue)
     issue.closed_at = "2020-01-15 11:00:00"
-    issue.closed_by =  Mock(return_value=[{"iid": merge_request.iid}])
+    issue.closed_by = Mock(return_value=[{"iid": merge_request.iid}])
     issue.labels = []
     issue.author = author
     issue.description = ""
@@ -266,14 +266,14 @@ def test_collect_data():
     # between the previous tag and this tag
     issue_2 = Mock(spec=gitlab.v4.objects.Issue)
     issue_2.closed_at = "2020-01-15 11:00:00"
-    issue_2.closed_by =  Mock(return_value=[{"iid": merge_request_2.iid}])
+    issue_2.closed_by = Mock(return_value=[{"iid": merge_request_2.iid}])
 
     # Note this issue was not closed by a MR that belongs to the tag so it should
     # not appear in the release notes even though it was closed during the time interval
     # between the previous tag and this tag
     issue_3 = Mock(spec=gitlab.v4.objects.Issue)
     issue_3.closed_at = "2020-01-15 11:00:00"
-    issue_3.closed_by =  Mock(return_value=[])
+    issue_3.closed_by = Mock(return_value=[])
 
     p.issues = Mock(spec=gitlab.v4.objects.ProjectIssueManager)
     p.issues.list = Mock(return_value=[issue, issue_2, issue_3])
