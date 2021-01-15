@@ -91,7 +91,7 @@ class Changelog:
     def _merge_requests(
         self, start: datetime, commit_shas: List
     ) -> List[ProjectMergeRequest]:
-        """Collect merge requests that are related to the commits since the previous tag."""
+        """Collect merge requests that are related to the new commits in the tag."""
         merge_requests = []
 
         # Have to list all merge requests and cross reference to the commits in this tag
