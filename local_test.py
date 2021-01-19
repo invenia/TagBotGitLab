@@ -1,6 +1,6 @@
 # This file is intended for local testing when contributing to this repository
-# Do not committ any changes
-# You will need to generate a Gitlab Personal Access Token to use this
+# Do not commit any changes
+# You will need to generate a GitLab Personal Access Token to use this
 import os
 from os import environ as env
 
@@ -33,5 +33,5 @@ for tag in tags:
     print("\n-----------------------------------------------------------------------\n")
 
     # Note the line below will actually set the release notes in the repository used
-    # Should only be used if that is intended behaviour
+    # Should only be used if that is the intended behaviour
     # tag.set_release_description(release_notes)
