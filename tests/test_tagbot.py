@@ -1,5 +1,5 @@
 from os import environ as env
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import gitlab
 
@@ -248,6 +248,7 @@ def test_handle_merge():
 
 def test_handle_open():
     mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
+    mr.head_pipeline = {"id": 62299}
     p = Mock(spec=gitlab.v4.objects.Project)
     p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
     p.mergerequests.get = Mock(return_value=mr)
@@ -267,6 +268,38 @@ def test_handle_open():
         == "Approved and merged."
     )
     tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
+    # Assert we've gotten the MR twice (the second time is just for printing)
+    calls = [call(None, lazy=True), call(None, lazy=False)]
+    p.mergerequests.get.assert_has_calls(calls)
+    mr.approve.assert_called_once_with()
+    mr.merge.assert_called_once_with(
+        merge_when_pipeline_succeeds=True, should_remove_source_branch=True
+    )
+
+    # Test with head pipeline not set
+    # Note it should still approve and try merging, GitLab API will throw an error if
+    # the merge is not valid but this is mocked so it succeeds fine
+    mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
+    mr.head_pipeline = None
+    p = Mock(spec=gitlab.v4.objects.Project)
+    p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
+    p.mergerequests.get = Mock(return_value=mr)
+    tagbot.client.projects.get = Mock(return_value=p)
+
+    assert (
+        tagbot.handle_open({"object_attributes": {"source_project_id": 1}})
+        == "Approved and merged."
+    )
+    tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
+    # Assert we've gotten the MR 5 times because of the retries
+    calls = [
+        call(None, lazy=True),
+        call(None, lazy=False),
+        call(None, lazy=False),
+        call(None, lazy=False),
+        call(None, lazy=False),
+    ]
+    p.mergerequests.get.assert_has_calls(calls)
     mr.approve.assert_called_once_with()
     mr.merge.assert_called_once_with(
         merge_when_pipeline_succeeds=True, should_remove_source_branch=True

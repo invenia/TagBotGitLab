@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 import traceback
 
 import gitlab  # type: ignore
@@ -65,13 +66,25 @@ def handle_open(payload):
     p = client.projects.get(p_id, lazy=True)
     mr_id = get_in(payload, "changes", "iid", "current")
     mr = p.mergerequests.get(mr_id, lazy=True)
+
     print("Approving MR")
     mr.approve()
+
     # Add printing the MR state to assist in debugging cases where the mr.merge() below
     # returns an error
     mr = p.mergerequests.get(mr_id, lazy=False)
     print(mr)
-    print("Merging MR")
+
+    # Add timeout to wait for the head pipeline to be associated properly with the MR
+    # Avoids merge failures
+    timeout = 1
+    while timeout <= 3 and mr.head_pipeline is None:
+        print(f"Sleeping for {timeout} seconds")
+        time.sleep(timeout)
+        timeout += 1
+        mr = p.mergerequests.get(mr_id, lazy=False)
+
+    print(f"Merging MR {mr}")
     mr.merge(merge_when_pipeline_succeeds=True, should_remove_source_branch=True)
     return "Approved and merged."
 
