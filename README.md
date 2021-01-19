@@ -11,17 +11,31 @@ Our Julia packages are registered in a private Julia package registry hosted on 
 Each MR registers a new package or a new version of a Julia package.
 Even though we host a private Registrator deployment, this can be used on any GitLab Julia package registry repository independently from where the MRs originate.
 
-## License
+## Changelogs (Release Notes)
 
-tagbotgitlab is provided under an MIT License.
+TagBotGitLab creates a changelog for each release based on the issues that have been closed and the merge requests that have been merged. Unlike [TagBot](https://github.com/JuliaRegistries/TagBot), TagBotGitLab currently does not support custom release notes or customizable templates.
+
+Issues and pull requests with specified labels are not included in the changelog data.
+By default, the following labels are ignored:
+
+- changelog skip
+- duplicate
+- exclude from changelog
+- invalid
+- no changelog
+- question
+- wont fix
+
+White-space, case, dashes, and underscores are ignored when comparing labels.
 
 ## Future Direction
-This package is not uploaded to PyPI for now, but we hope to upload it eventually so that things like the `Changelog` can be used seprately from the automatic merging of GitLab MRs.
+
+This package is not uploaded to PyPI for now, but we hope to upload it eventually so that things like the `Changelog` can be used separately from the automatic merging of GitLab MRs.
 
 The vision is to use only the `Changelog` on our prod repository when manual tags are made to populate the release notes automatically.
 
-
 ## Installation
+
 To install this just install it into a virtualenv like so:
 
 ```
@@ -59,19 +73,17 @@ Steps:
 
 This code is tested on GitLab version `11.11.0-ee`.
 
-### Changelogs (Release Notes)
+## Contributing
 
-TagBotGitlab creates a changelog for each release based on the issues that have been closed and the merge requests that have been merged. Unlike [TagBot](https://github.com/JuliaRegistries/TagBot), TagBotGitLab currently does not support custom release notes or customizable templates.
+This package uses the [python-gitlab](https://python-gitlab.readthedocs.io/en/stable/index.html) package to interact with GitLab.
+It's useful to refer to their documentation when making changes.
+You can test using their API locally by generating a [Personal Access Token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) and setting it in the included `local_test.py` script.
 
-Issues and pull requests with specified labels are not included in the changelog data.
-By default, the following labels are ignored:
+You can run tests locally by running in the virtualenv you installed the package in:
+```
+tox
+```
 
-- changelog skip
-- duplicate
-- exclude from changelog
-- invalid
-- no changelog
-- question
-- wont fix
+## License
 
-White-space, case, dashes, and underscores are ignored when comparing labels.
+tagbotgitlab is provided under an MIT License.
