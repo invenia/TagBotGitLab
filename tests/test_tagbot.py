@@ -246,7 +246,8 @@ def test_handle_merge():
     p.tags.create.assert_called_once_with({"tag_name": "v0.1.2", "ref": "abcdef"})
 
 
-def test_handle_open():
+@patch("time.sleep", return_value=None)
+def test_handle_open(patched_time_sleep):
     mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     mr.head_pipeline = {"id": 62299}
     p = Mock(spec=gitlab.v4.objects.Project)

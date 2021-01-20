@@ -79,7 +79,7 @@ def handle_open(payload):
     # Avoids merge failures
     timeout = 1
     while timeout <= 3 and mr.head_pipeline is None:
-        print(f"Sleeping for {timeout} seconds")
+        print(f"The MR's head_pipeline is not set - sleeping for {timeout} seconds")
         time.sleep(timeout)
         timeout += 1
         mr = p.mergerequests.get(mr_id, lazy=False)
