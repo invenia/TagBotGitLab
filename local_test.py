@@ -20,18 +20,5 @@ client = gitlab.Gitlab(
 repo = "invenia/TestRepo.jl"
 
 p = client.projects.get(repo, lazy=True)
-changelog = Changelog(p)
-
-
-tags = p.tags.list(all=False)
-for tag in tags:
-    commit = tag.commit["id"]
-    version = tag.name
-
-    release_notes = changelog.get(version, commit)
-    print(release_notes)
-    print("\n-----------------------------------------------------------------------\n")
-
-    # Note the line below will actually set the release notes in the repository used
-    # Should only be used if that is the intended behaviour
-    # tag.set_release_description(release_notes)
+mr = p.mergerequests.get("146", lazy=False)
+print(mr)

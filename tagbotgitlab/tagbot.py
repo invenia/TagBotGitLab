@@ -5,8 +5,7 @@ import time
 import traceback
 
 import gitlab  # type: ignore
-
-from tagbotgitlab.changelog import Changelog
+from gitlabchangelog.changelog import Changelog  # type: ignore
 
 
 # match on group3 to get everything after the host, i.e everything after the single '/'

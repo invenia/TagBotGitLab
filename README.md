@@ -27,12 +27,7 @@ By default, the following labels are ignored:
 - wont fix
 
 White-space, case, dashes, and underscores are ignored when comparing labels.
-
-## Future Direction
-
-This package is not uploaded to PyPI for now, but we hope to upload it eventually so that things like the `Changelog` can be used separately from the automatic merging of GitLab MRs.
-
-The vision is to use only the `Changelog` on our prod repository when manual tags are made to populate the release notes automatically.
+See [GitLabChangelog](https://github.com/invenia/GitLabChangelog) for more details.
 
 ## Installation
 
