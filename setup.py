@@ -8,10 +8,8 @@ TEST_DEPS = ["coverage", "pytest", "pytest-cov"]
 DOCS_DEPS = ["sphinx", "sphinx-rtd-theme", "sphinx-autoapi", "recommonmark"]
 CHECK_DEPS = ["isort", "flake8", "flake8-quotes", "pep8-naming", "mypy", "black"]
 REQUIREMENTS = [
-    "Jinja2>=2.10.3",
-    "python-dateutil>=2.8.1",
     "python-gitlab>=1.8.0",
-    "semver>=2.9.0",
+    "gitlabchangelog>=0.1.0",
 ]
 
 EXTRAS = {
