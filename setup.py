@@ -8,7 +8,7 @@ TEST_DEPS = ["coverage", "pytest", "pytest-cov"]
 DOCS_DEPS = ["sphinx", "sphinx-rtd-theme", "sphinx-autoapi", "recommonmark"]
 CHECK_DEPS = ["isort", "flake8", "flake8-quotes", "pep8-naming", "mypy", "black"]
 REQUIREMENTS = [
-    "python-gitlab>=1.8.0",
+    "python-gitlab>=2.7.1",
     "gitlabchangelog>=0.1.0",
 ]
 
