@@ -59,11 +59,11 @@ def handle_open(payload):
     """Handle a merge request open event."""
     if not merge:
         return "Automatic merging is disabled"
-    if get_in(payload, "changes", "iid", "previous") is not None:
+    if get_in(payload, "changes", "updated_by_id", "previous") is not None:
         return "Not a new MR"
     p_id = get_in(payload, "object_attributes", "source_project_id")
     p = client.projects.get(p_id, lazy=True)
-    mr_id = get_in(payload, "changes", "iid", "current")
+    mr_id = get_in(payload, "object_attributes", "iid")
     mr = p.mergerequests.get(mr_id, lazy=True)
 
     print("Approving MR")

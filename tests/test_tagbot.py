@@ -261,7 +261,10 @@ def test_handle_open(patched_time_sleep):
 
     # when mr is not a newly opened mr
     tagbot.merge = True
-    assert tagbot.handle_open({"changes": {"iid": {"previous": 1}}}) == "Not a new MR"
+    assert (
+        tagbot.handle_open({"changes": {"updated_by_id": {"previous": 1}}})
+        == "Not a new MR"
+    )
 
     # all valid, performs merge
     assert (
