@@ -248,9 +248,16 @@ def test_handle_merge():
 
 @patch("time.sleep", return_value=None)
 def test_handle_open(patched_time_sleep):
+    # MR that is not ready to be accepted/merged
     mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     mr.head_pipeline = {"id": 62299}
-    mr.merge_status = "can_be_merged"
+    mr.merge_status = "checking"
+
+    # MR that is approved and ready to be accepted/merged
+    mr_approved = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
+    mr_approved.head_pipeline = {"id": 62299}
+    mr_approved.merge_status = "can_be_merged"
+
     p = Mock(spec=gitlab.v4.objects.Project)
     p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
     p.mergerequests.get = Mock(return_value=mr)
@@ -267,17 +274,26 @@ def test_handle_open(patched_time_sleep):
         == "Not a new MR"
     )
 
+    # Return the approved MR on the 3rd get call (inside merge_status check)
+    p.mergerequests.get = Mock(side_effect=[mr, mr, mr_approved])
+
     # all valid, performs merge
     assert (
         tagbot.handle_open({"object_attributes": {"source_project_id": 1}})
         == "Approved and merged."
     )
+
     tagbot.client.projects.get.assert_called_once_with(1, lazy=True)
-    # Assert we've gotten the MR twice (the second time is just for printing)
-    calls = [call(None, lazy=True), call(None, lazy=False)]
+    # Assert we've gotten the MR three times
+    # 1. Before approval 2. After approval 3. Before merging
+    calls = [
+        call(None, lazy=True),
+        call(None, lazy=False),
+        call(None, lazy=False),
+    ]
     p.mergerequests.get.assert_has_calls(calls)
     mr.approve.assert_called_once_with()
-    mr.merge.assert_called_once_with(
+    mr_approved.merge.assert_called_once_with(
         merge_when_pipeline_succeeds=True, should_remove_source_branch=True
     )
 
