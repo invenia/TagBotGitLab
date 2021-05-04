@@ -83,6 +83,14 @@ def handle_open(payload):
         timeout += 1
         mr = p.mergerequests.get(mr_id, lazy=False)
 
+    # Accepting the MR while the merge_status is "checking" seems to result in a
+    # 406 error.
+    # To work around this, poll until the merge_status is no longer "checking".
+    # See https://gitlab.com/gitlab-org/gitlab/-/issues/196962
+    while mr.merge_status == "checking":
+        print(f"Polling for merge_status: {mr.merge_status}")
+        mr = p.mergerequests.get(mr_id, lazy=False)
+
     print(f"Merging MR {mr}")
     mr.merge(merge_when_pipeline_succeeds=True, should_remove_source_branch=True)
     return "Approved and merged."

@@ -250,6 +250,7 @@ def test_handle_merge():
 def test_handle_open(patched_time_sleep):
     mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     mr.head_pipeline = {"id": 62299}
+    mr.merge_status = "can_be_merged"
     p = Mock(spec=gitlab.v4.objects.Project)
     p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
     p.mergerequests.get = Mock(return_value=mr)
@@ -285,6 +286,7 @@ def test_handle_open(patched_time_sleep):
     # the merge is not valid but this is mocked so it succeeds fine
     mr = Mock(spec=gitlab.v4.objects.ProjectMergeRequest)
     mr.head_pipeline = None
+    mr.merge_status = "can_be_merged"
     p = Mock(spec=gitlab.v4.objects.Project)
     p.mergerequests = Mock(spec=gitlab.v4.objects.ProjectMergeRequestManager)
     p.mergerequests.get = Mock(return_value=mr)
