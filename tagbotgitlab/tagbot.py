@@ -8,6 +8,8 @@ import gitlab  # type: ignore
 from gitlabchangelog.changelog import Changelog  # type: ignore
 
 
+POLL_TIMEOUT = 1
+
 # match on group3 to get everything after the host, i.e everything after the single '/'
 re_repo = re.compile("Repository:\\s*(http[s]?://)?([^/\\s]+/)(.*)")
 re_version = re.compile("Version:\\s*(v.*)")
@@ -81,6 +83,16 @@ def handle_open(payload):
         print(f"The MR's head_pipeline is not set - sleeping for {timeout} seconds")
         time.sleep(timeout)
         timeout += 1
+        mr = p.mergerequests.get(mr_id, lazy=False)
+
+    # Accepting the MR while the merge_status is "checking" seems to result in a
+    # 406 error.
+    # To work around this, poll until the merge_status is no longer "checking".
+    # See https://gitlab.com/gitlab-org/gitlab/-/issues/196962
+    while mr.merge_status == "checking":
+        print(f"Polling for merge_status: {mr.merge_status}")
+        # Avoid slamming the API
+        time.sleep(POLL_TIMEOUT)
         mr = p.mergerequests.get(mr_id, lazy=False)
 
     print(f"Merging MR {mr}")
