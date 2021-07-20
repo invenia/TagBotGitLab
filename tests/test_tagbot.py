@@ -1,5 +1,5 @@
 from os import environ as env
-from unittest.mock import Mock, call, patch
+from unittest.mock import ANY, Mock, call, patch
 
 import gitlab
 
@@ -150,6 +150,18 @@ def test_handle_merge():
     tag.attributes = {"commit": {"created_at": "2020-02-01 11:00:00"}}
     p.tags.list = Mock(return_value=[prev_tag, tag])
 
+    p.releases = Mock(spec=gitlab.v4.objects.ProjectReleaseManager)
+    p.releases.gitlab = Mock(spec=gitlab.Gitlab)
+    p.releases.gitlab.url = "gitlab.foo.com"
+
+    prev_release = Mock(spec=gitlab.v4.objects.ProjectRelease)
+    prev_release.name = prev_release.tag_name = "v0.1.0"
+    prev_release.attributes = {"commit": {"created_at": "2020-01-01 11:00:00"}}
+    release = Mock(spec=gitlab.v4.objects.ProjectRelease)
+    release.name = release.tag_name = "v0.1.2"
+    release.attributes = {"commit": {"created_at": "2020-02-01 11:00:00"}}
+    p.releases.list = Mock(return_value=[prev_release, release])
+
     commit = Mock(spec=gitlab.v4.objects.ProjectCommit)
     commit.id = "1a2b3c"
     commit.created_at = "2020-02-01 11:00:00"
@@ -241,9 +253,14 @@ def test_handle_merge():
             "description": good_body,
         }
     }
-    assert tagbot.handle_merge(payload) == "Created tag v0.1.2 for foo/bar at abcdef"
+    assert (
+        tagbot.handle_merge(payload)
+        == "Created release and tag v0.1.2 for foo/bar at abcdef"
+    )
     tagbot.client.projects.get.assert_called_once_with("foo/bar", lazy=True)
-    p.tags.create.assert_called_once_with({"tag_name": "v0.1.2", "ref": "abcdef"})
+    p.releases.create.assert_called_once_with(
+        {"tag_name": "v0.1.2", "ref": "abcdef", "description": ANY}
+    )
 
 
 @patch("time.sleep", return_value=None)
