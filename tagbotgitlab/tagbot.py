@@ -120,14 +120,15 @@ def handle_merge(payload):
         raise Exception("Parsing MR description failed. " + err)
     p = client.projects.get(repo, lazy=True)
 
-    print(f"Creating tag {version} for {repo} at {commit}")
-    tag = p.tags.create({"tag_name": version, "ref": commit})
-
     changelog = Changelog(p)
     release_notes = changelog.get(version, commit)
-    tag.set_release_description(release_notes)
 
-    return f"Created tag {version} for {repo} at {commit}"
+    print(f"Creating release and tag {version} for {repo} at {commit}")
+    p.releases.create(
+        {"tag_name": version, "ref": commit, "description": release_notes}
+    )
+
+    return f"Created release and tag {version} for {repo} at {commit}"
 
 
 def parse_body(body):
