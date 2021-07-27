@@ -259,7 +259,7 @@ def test_handle_merge():
     )
     tagbot.client.projects.get.assert_called_once_with("foo/bar", lazy=True)
     p.releases.create.assert_called_once_with(
-        {"tag_name": "v0.1.2", "ref": "abcdef", "description": ANY}
+        {"tag_name": "v0.1.2", "ref": "abcdef", "description": ANY, "name": "v0.1.2"}
     )
 
 
