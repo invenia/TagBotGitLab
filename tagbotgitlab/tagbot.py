@@ -129,6 +129,8 @@ def handle_merge(payload):
             "tag_name": version,
             "ref": commit,
             "description": release_notes,
+            # This can be removed after
+            # https://github.com/python-gitlab/python-gitlab/pull/1555 is released
             "name": version,
         }
     )
