@@ -125,7 +125,12 @@ def handle_merge(payload):
 
     print(f"Creating release and tag {version} for {repo} at {commit}")
     p.releases.create(
-        {"tag_name": version, "ref": commit, "description": release_notes}
+        {
+            "tag_name": version,
+            "ref": commit,
+            "description": release_notes,
+            "name": version,
+        }
     )
 
     return f"Created release and tag {version} for {repo} at {commit}"
