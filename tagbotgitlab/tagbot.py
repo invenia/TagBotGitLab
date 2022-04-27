@@ -10,10 +10,12 @@ from gitlabchangelog.changelog import Changelog  # type: ignore
 
 POLL_TIMEOUT = 1
 
-# match on group3 to get everything after the host, i.e everything after the single '/'
-re_repo = re.compile("Repository:\\s*(http[s]?://)?([^/\\s]+/)(.*)")
-re_version = re.compile("Version:\\s*(v.*)")
-re_commit = re.compile("Commit:\\s*(.*)")
+# Note we stop matching at '<' (or whitespace characters) because the MR body may
+# contain HTML elements such as `<br>`, which are not part of the fields' values.
+# See https://github.com/invenia/TagBotGitLab/issues/35
+re_repo = re.compile("Repository:\\s*(http[s]?://)?([^/\\s]+/)([^\\s<]*)")
+re_version = re.compile("Version:\\s*(v[^\\s<]*)")
+re_commit = re.compile("Commit:\\s*([^\\s<]*)")
 
 merge = os.getenv("AUTOMATIC_MERGE", "").lower() == "true"
 registrator = int(os.environ["REGISTRATOR_ID"])
@@ -143,6 +145,7 @@ def parse_body(body):
     m = re_repo.search(body)
     if not m:
         return None, None, None, "No repo match"
+    # match on group3 to get everything after the host, i.e everything after the single '/'
     repo = m[3].strip()
     m = re_version.search(body)
     if not m:
