@@ -27,6 +27,7 @@ good_body_with_html = (
     "• Triggered by: @john.doe<br>"
 )
 
+
 def test_parse_body():
     repo, version, commit, err = tagbot.parse_body(good_body)
     assert repo == "foo/bar"

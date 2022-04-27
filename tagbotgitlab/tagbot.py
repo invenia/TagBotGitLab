@@ -145,7 +145,8 @@ def parse_body(body):
     m = re_repo.search(body)
     if not m:
         return None, None, None, "No repo match"
-    # match on group3 to get everything after the host, i.e everything after the single '/'
+    # match on group3 to get everything after the host, i.e everything after
+    # the first single '/'
     repo = m[3].strip()
     m = re_version.search(body)
     if not m:
